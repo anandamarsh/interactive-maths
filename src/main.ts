@@ -7,56 +7,89 @@ if (!root) {
   throw new Error("Root element not found.");
 }
 
-const activeGameId = new URLSearchParams(window.location.search).get("game") ?? GAMES[0]?.id ?? "";
-const activeGame = GAMES.find((game) => game.id === activeGameId) ?? GAMES[0];
+const escapeHtml = (value: string) =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 
-if (!activeGame) {
-  root.innerHTML = `
-    <main class="flex min-h-screen items-center justify-center bg-neutral-950 px-6 text-neutral-100">
-      <p>No games configured.</p>
-    </main>
-  `;
-} else {
-  const buttons = GAMES.map((game) => {
-    const activeClass =
-      game.id === activeGame.id
-        ? "rounded-full bg-white px-3 py-1.5 text-xs font-medium text-black"
-        : "rounded-full border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300";
+const matchesQuery = (query: string) => {
+  const normalized = query.trim().toLowerCase();
 
-    return `<button class="${activeClass}" type="button" data-game-id="${game.id}">${game.name}</button>`;
-  }).join("");
+  return GAMES.filter((game) => {
+    if (!normalized) {
+      return true;
+    }
 
-  root.innerHTML = `
-    <main class="flex min-h-screen flex-col bg-neutral-950 text-neutral-100">
-      <header class="flex items-center justify-between gap-4 border-b border-neutral-800 bg-neutral-950/95 px-4 py-3">
-        <div>
-          <h1 class="text-sm font-semibold uppercase tracking-[0.2em]">Interactive Maths</h1>
-          <p class="text-xs text-neutral-400">Each game runs independently inside its own page.</p>
-        </div>
-        <div class="flex items-center gap-2">${buttons}</div>
-      </header>
-      <section class="flex-1">
-        <iframe
-          src="${activeGame.url}"
-          title="${activeGame.name}"
-          class="h-[calc(100vh-61px)] w-full border-0"
-          loading="eager"
-        ></iframe>
-      </section>
-    </main>
-  `;
-
-  root.querySelectorAll<HTMLButtonElement>("[data-game-id]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const gameId = button.dataset.gameId;
-
-      if (!gameId) {
-        return;
-      }
-
-      const params = new URLSearchParams(window.location.search);
-      params.set("game", gameId);
-      window.location.search = params.toString();
-    });
+    return (
+      game.name.toLowerCase().includes(normalized) ||
+      game.tags.some((tag) => tag.includes(normalized)) ||
+      game.skills.some((skill) => skill.includes(normalized)) ||
+      game.subjects.some((subject) => subject.includes(normalized)) ||
+      game.manifest.toLowerCase().includes(normalized) ||
+      `${game.ageRange[0]}-${game.ageRange[1]}`.includes(normalized)
+    );
   });
-}
+};
+
+const render = (query = "") => {
+  const filtered = matchesQuery(query);
+  const cards = filtered
+    .map(
+      (game) => `
+        <a class="game-card" href="${game.url}">
+          <div class="game-icon">${game.icon}</div>
+          <div class="game-meta">
+            <h2>${escapeHtml(game.name)}</h2>
+            <p>Ages ${game.ageRange[0]}-${game.ageRange[1]}</p>
+          </div>
+          <div class="tag-row">
+            ${game.tags
+              .map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`)
+              .join("")}
+          </div>
+        </a>
+      `,
+    )
+    .join("");
+
+  root.innerHTML = `
+    <main class="page-shell">
+      <header class="page-header">
+        <h1>Interactive Maths</h1>
+        <p>Arcade-style games for children aged 7–12</p>
+      </header>
+
+      <div class="search-wrap">
+        <input
+          id="game-search"
+          class="search-input"
+          type="text"
+          value="${escapeHtml(query)}"
+          placeholder="Search by topic, skill, or age..."
+          autocomplete="off"
+        />
+      </div>
+
+      ${
+        filtered.length === 0
+          ? `<p class="empty-state">No games found.</p>`
+          : `<section class="game-grid">${cards}</section>`
+      }
+    </main>
+  `;
+
+  const searchInput = root.querySelector<HTMLInputElement>("#game-search");
+
+  if (searchInput) {
+    searchInput.focus();
+    searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+    searchInput.addEventListener("input", (event) => {
+      render((event.currentTarget as HTMLInputElement).value);
+    });
+  }
+};
+
+render();
