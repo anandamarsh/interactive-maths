@@ -1,40 +1,52 @@
 import { useState } from "react";
 import { GAMES } from "./games";
-import { GameCard } from "./GameCard";
 
 export default function App() {
-  const [query, setQuery] = useState("");
+  const [activeGameId, setActiveGameId] = useState(GAMES[0]?.id ?? "");
+  const activeGame = GAMES.find((game) => game.id === activeGameId) ?? GAMES[0];
 
-  const filtered = GAMES.filter((g) => {
-    const q = query.toLowerCase();
+  if (!activeGame) {
     return (
-      !q ||
-      g.name.toLowerCase().includes(q) ||
-      g.tags.some((t) => t.includes(q)) ||
-      g.skills.some((s) => s.includes(q)) ||
-      g.manifest.toLowerCase().includes(q)
+      <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-6 text-neutral-100">
+        <p>No games configured.</p>
+      </main>
     );
-  });
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white px-6 py-10 font-mono">
-      <h1 className="text-3xl font-black tracking-tight mb-1">Interactive Maths</h1>
-      <p className="text-slate-400 text-sm mb-8">Arcade-style games for children aged 7–12</p>
-
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search by topic, skill, or age..."
-        className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-cyan-500 mb-10"
-      />
-
-      {filtered.length === 0 ? (
-        <p className="text-slate-500">No games found.</p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {filtered.map((g) => <GameCard key={g.id} game={g} />)}
+    <main className="flex min-h-screen flex-col bg-neutral-950 text-neutral-100">
+      <header className="flex items-center justify-between gap-4 border-b border-neutral-800 bg-neutral-950/95 px-4 py-3">
+        <div>
+          <h1 className="text-sm font-semibold uppercase tracking-[0.2em]">Interactive Maths</h1>
+          <p className="text-xs text-neutral-400">Each game runs independently inside its own page.</p>
         </div>
-      )}
-    </div>
+        <div className="flex items-center gap-2">
+          {GAMES.map((game) => (
+            <button
+              key={game.id}
+              type="button"
+              onClick={() => setActiveGameId(game.id)}
+              className={
+                game.id === activeGame.id
+                  ? "rounded-full bg-white px-3 py-1.5 text-xs font-medium text-black"
+                  : "rounded-full border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300"
+              }
+            >
+              {game.name}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <section className="flex-1">
+        <iframe
+          key={activeGame.id}
+          src={activeGame.url}
+          title={activeGame.name}
+          className="h-[calc(100vh-61px)] w-full border-0"
+          loading="eager"
+        />
+      </section>
+    </main>
   );
 }
