@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { GAMES } from "./games";
+import { GAMES, type Game } from "./games";
 
 export default function App() {
   const [query, setQuery] = useState("");
+  const [active, setActive] = useState<Game | null>(null);
 
   const filtered = GAMES.filter((g) => {
     const q = query.toLowerCase();
@@ -14,6 +15,29 @@ export default function App() {
       g.manifest.toLowerCase().includes(q)
     );
   });
+
+  if (active) {
+    return (
+      <div className="fixed inset-0 flex flex-col" style={{ background: "#020617" }}>
+        {/* thin top bar */}
+        <div className="flex items-center gap-3 px-4 py-2 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
+          <button
+            onClick={() => setActive(null)}
+            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+          >
+            ← Back
+          </button>
+          <span className="text-white font-semibold text-sm">{active.name}</span>
+        </div>
+        <iframe
+          src={active.url}
+          className="flex-1 w-full border-0"
+          allow="autoplay"
+          title={active.name}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-6 py-10" style={{ background: "#020617" }}>
@@ -31,10 +55,7 @@ export default function App() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by topic, skill, age…"
           className="w-full max-w-md rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none mb-10"
-          style={{
-            background: "#0f172a",
-            border: "1px solid #334155",
-          }}
+          style={{ background: "#0f172a", border: "1px solid #334155" }}
           onFocus={(e) => (e.currentTarget.style.borderColor = "#0ea5e9")}
           onBlur={(e) => (e.currentTarget.style.borderColor = "#334155")}
         />
@@ -44,12 +65,10 @@ export default function App() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {filtered.map((g) => (
-              <a
+              <button
                 key={g.id}
-                href={g.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col gap-3 rounded-2xl p-4 transition-all"
+                onClick={() => setActive(g)}
+                className="flex flex-col gap-3 rounded-2xl p-4 text-left transition-all"
                 style={{ background: "#0f172a", border: "1px solid #1e293b" }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.borderColor = "#0ea5e9";
@@ -60,28 +79,20 @@ export default function App() {
                   (e.currentTarget as HTMLElement).style.background = "#0f172a";
                 }}
               >
-                <div
-                  className="w-16 h-16"
-                  dangerouslySetInnerHTML={{ __html: g.icon }}
-                />
+                <div className="w-16 h-16" dangerouslySetInnerHTML={{ __html: g.icon }} />
                 <div>
                   <div className="text-white font-bold text-sm leading-tight">{g.name}</div>
-                  <div className="text-slate-400 text-xs mt-1">
-                    Ages {g.ageRange[0]}–{g.ageRange[1]}
-                  </div>
+                  <div className="text-slate-400 text-xs mt-1">Ages {g.ageRange[0]}–{g.ageRange[1]}</div>
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {g.tags.slice(0, 3).map((t) => (
-                    <span
-                      key={t}
-                      className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: "#1e293b", color: "#94a3b8" }}
-                    >
+                    <span key={t} className="text-[10px] px-2 py-0.5 rounded-full"
+                      style={{ background: "#1e293b", color: "#94a3b8" }}>
                       {t}
                     </span>
                   ))}
                 </div>
-              </a>
+              </button>
             ))}
           </div>
         )}
