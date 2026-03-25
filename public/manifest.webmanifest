@@ -1,7 +1,7 @@
 {
   "name": "Interactive Maths",
   "short_name": "Interactive Maths",
-  "description": "Arcade-style maths games for children aged 7–12",
+  "description": "Arcade-style maths games",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

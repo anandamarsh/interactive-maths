@@ -6,7 +6,6 @@ interface Game {
   url: string;
   icon: string;
   tags: string[];
-  ageRange: [number, number];
   subjects: string[];
   skills: string[];
   description: string;
@@ -96,13 +95,13 @@ export default function App() {
           </p>
           <h1 className="text-4xl font-black text-white mb-1">Game Library</h1>
           <p className="text-slate-400 text-sm mb-6 max-w-md">
-            Arcade-style maths games for children aged 7–12
+            Arcade-style maths games
           </p>
 
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by topic, skill, age…"
+            placeholder="Search by topic or skill…"
             className="w-full max-w-md rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none text-left"
             style={{ background: "#0f172a", border: "1px solid #334155" }}
             onFocus={(e) => (e.currentTarget.style.borderColor = "#0ea5e9")}
@@ -134,7 +133,6 @@ export default function App() {
                 <div className="w-16 h-16" dangerouslySetInnerHTML={{ __html: g.icon }} />
                 <div>
                   <div className="text-white font-bold text-sm leading-tight">{g.name}</div>
-                  <div className="text-slate-400 text-xs mt-1">Ages {g.ageRange[0]}–{g.ageRange[1]}</div>
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {g.tags.slice(0, 3).map((t) => (
