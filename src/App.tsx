@@ -12,10 +12,6 @@ interface Game {
   description: string;
 }
 
-const LOCAL_OVERRIDES: Record<string, string> = {
-  "maths-distance-calculator": "http://localhost:4001",
-};
-
 export default function App() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,17 +19,15 @@ export default function App() {
   const [active, setActive] = useState<Game | null>(null);
 
   useEffect(() => {
-    fetch("/games.json")
+    const listFile = import.meta.env.DEV ? "/games-local.json" : "/games.json";
+    fetch(listFile)
       .then((r) => r.json())
       .then((urls: string[]) =>
         Promise.all(
           urls.map((url) =>
-            fetch(
-              (import.meta.env.DEV ? LOCAL_OVERRIDES[url.split("/").filter(Boolean).pop() ?? ""] ?? url : url)
-              + "manifest.json"
-            )
+            fetch(url.replace(/\/?$/, "/") + "manifest.json")
               .then((r) => r.json())
-              .then((m) => ({ ...m, url: import.meta.env.DEV ? (LOCAL_OVERRIDES[m.id] ?? url) : url }))
+              .then((m) => ({ ...m, url }))
               .catch(() => null)
           )
         )
