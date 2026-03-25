@@ -68,13 +68,12 @@ export default function App() {
             width: 64,
             height: 64,
             background: "linear-gradient(180deg, #f97316, #ea580c)",
-            borderRadius: 12,
+            borderRadius: "50%",
             border: "3px solid #fef08a",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 5px 0 #9a3412",
           }}
         >
           <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
