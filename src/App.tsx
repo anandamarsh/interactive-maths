@@ -51,22 +51,36 @@ export default function App() {
 
   if (active) {
     return (
-      <div className="fixed inset-0 flex flex-col" style={{ background: "#020617" }}>
-        <div className="flex items-center gap-3 px-4 py-2 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
-          <button
-            onClick={() => setActive(null)}
-            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
-          >
-            ⌂ Home
-          </button>
-          <span className="text-white font-semibold text-sm">{active.name}</span>
-        </div>
+      <div className="fixed inset-0" style={{ background: "#020617" }}>
         <iframe
           src={active.url}
-          className="flex-1 w-full border-0"
+          className="w-full h-full border-0"
           allow="autoplay"
           title={active.name}
         />
+        <button
+          onClick={() => setActive(null)}
+          title="Home"
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            width: 64,
+            height: 64,
+            background: "linear-gradient(180deg, #f97316, #ea580c)",
+            borderRadius: 12,
+            border: "3px solid #fef08a",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 5px 0 #9a3412",
+          }}
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+          </svg>
+        </button>
       </div>
     );
   }
