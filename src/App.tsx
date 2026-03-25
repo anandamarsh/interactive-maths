@@ -51,7 +51,7 @@ export default function App() {
 
   if (active) {
     return (
-      <div className="fixed inset-0" style={{ background: "#020617" }}>
+      <div className="fixed inset-0" style={{ backgroundColor: "#020617" }}>
         <iframe
           src={active.url}
           className="w-full h-full border-0"
@@ -85,25 +85,30 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen px-6 py-10" style={{ background: "#020617" }}>
-      <div className="max-w-5xl mx-auto">
-        <p className="text-xs font-bold tracking-[0.25em] uppercase text-sky-400 mb-2">
-          Interactive Maths
-        </p>
-        <h1 className="text-4xl font-black text-white mb-1">Game Library</h1>
-        <p className="text-slate-400 text-sm mb-8">
-          Arcade-style maths games for children aged 7–12
-        </p>
+    <div
+      className="min-h-[100lvh] px-6 py-10"
+      style={{ backgroundColor: "#020617" }}
+    >
+      <div className="max-w-5xl mx-auto w-full">
+        <header className="flex flex-col items-center text-center mb-10">
+          <p className="text-xs font-bold tracking-[0.25em] uppercase text-sky-400 mb-2">
+            Interactive Maths
+          </p>
+          <h1 className="text-4xl font-black text-white mb-1">Game Library</h1>
+          <p className="text-slate-400 text-sm mb-6 max-w-md">
+            Arcade-style maths games for children aged 7–12
+          </p>
 
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by topic, skill, age…"
-          className="w-full max-w-md rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none mb-10"
-          style={{ background: "#0f172a", border: "1px solid #334155" }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "#0ea5e9")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "#334155")}
-        />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by topic, skill, age…"
+            className="w-full max-w-md rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none text-left"
+            style={{ background: "#0f172a", border: "1px solid #334155" }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = "#0ea5e9")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "#334155")}
+          />
+        </header>
 
         {loading ? (
           <p className="text-slate-500">Loading games…</p>
