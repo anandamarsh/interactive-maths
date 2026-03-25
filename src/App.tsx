@@ -57,7 +57,7 @@ export default function App() {
             onClick={() => setActive(null)}
             className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
           >
-            ← Back
+            ⌂ Home
           </button>
           <span className="text-white font-semibold text-sm">{active.name}</span>
         </div>
