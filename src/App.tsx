@@ -1,25 +1,63 @@
-import { useState } from "react";
-import { GAMES, type Game } from "./games";
+import { useEffect, useState } from "react";
+
+interface Game {
+  id: string;
+  name: string;
+  url: string;
+  icon: string;
+  tags: string[];
+  ageRange: [number, number];
+  subjects: string[];
+  skills: string[];
+  description: string;
+}
+
+const LOCAL_OVERRIDES: Record<string, string> = {
+  "maths-distance-calculator": "http://localhost:4001",
+};
 
 export default function App() {
+  const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<Game | null>(null);
 
-  const filtered = GAMES.filter((g) => {
+  useEffect(() => {
+    fetch("/games.json")
+      .then((r) => r.json())
+      .then((urls: string[]) =>
+        Promise.all(
+          urls.map((url) =>
+            fetch(
+              (import.meta.env.DEV ? LOCAL_OVERRIDES[url.split("/").filter(Boolean).pop() ?? ""] ?? url : url)
+              + "manifest.json"
+            )
+              .then((r) => r.json())
+              .then((m) => ({ ...m, url: import.meta.env.DEV ? (LOCAL_OVERRIDES[m.id] ?? url) : url }))
+              .catch(() => null)
+          )
+        )
+      )
+      .then((results) => {
+        setGames(results.filter(Boolean));
+        setLoading(false);
+      });
+  }, []);
+
+  const filtered = games.filter((g) => {
     const q = query.toLowerCase();
     return (
       !q ||
       g.name.toLowerCase().includes(q) ||
       g.tags.some((t) => t.includes(q)) ||
       g.skills.some((s) => s.includes(q)) ||
-      g.manifest.toLowerCase().includes(q)
+      g.description.toLowerCase().includes(q)
     );
   });
 
   if (active) {
     return (
       <div className="fixed inset-0 flex flex-col" style={{ background: "#020617" }}>
-        {/* thin top bar */}
         <div className="flex items-center gap-3 px-4 py-2 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
           <button
             onClick={() => setActive(null)}
@@ -60,7 +98,9 @@ export default function App() {
           onBlur={(e) => (e.currentTarget.style.borderColor = "#334155")}
         />
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <p className="text-slate-500">Loading games…</p>
+        ) : filtered.length === 0 ? (
           <p className="text-slate-500">No games match "{query}".</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
