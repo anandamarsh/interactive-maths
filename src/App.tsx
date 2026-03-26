@@ -60,22 +60,9 @@ export default function App() {
         <button
           onClick={() => setActive(null)}
           title="Home"
-          style={{
-            position: "absolute",
-            top: 8,
-            left: 8,
-            width: 64,
-            height: 64,
-            background: "linear-gradient(180deg, #f97316, #ea580c)",
-            borderRadius: "50%",
-            border: "3px solid #fef08a",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          className="arcade-button absolute top-2 left-2 w-10 h-10 p-2"
         >
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+          <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
           </svg>
         </button>

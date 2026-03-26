@@ -24,3 +24,13 @@ body {
   min-height: 100lvh;
   background-color: #020617;
 }
+
+.arcade-button {
+  background: linear-gradient(180deg, #f97316, #ea580c);
+  border: 3px solid #fef08a;
+  border-radius: 9999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
