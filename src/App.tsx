@@ -185,7 +185,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-[100lvh] px-6 py-10" style={{ backgroundColor: "#020617" }}>
+    <div className="min-h-[100lvh] px-6 py-10">
       <div className="max-w-5xl mx-auto w-full">
         <header className="flex flex-col items-center text-center mb-10">
           <p className="text-xs font-bold tracking-[0.25em] uppercase text-sky-400 mb-2">
