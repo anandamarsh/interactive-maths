@@ -143,3 +143,28 @@ body {
   flex: 1;
   min-height: 0;
 }
+
+.social-share-buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 1rem 1.25rem 1.25rem;
+  justify-content: flex-start;
+}
+
+.social-share-buttons > * {
+  display: block;
+}
+
+.social-share-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #cffafe;
+  font-size: 0;
+}
+
+.social-share-chip span:last-child {
+  display: none;
+}
