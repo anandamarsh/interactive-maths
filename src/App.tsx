@@ -12,6 +12,50 @@ interface Game {
 
 const base = (url: string) => url.replace(/\/?$/, "/");
 
+const SKILL_COLORS = [
+  { bg: "rgba(56,189,248,0.15)",  color: "#38bdf8" },
+  { bg: "rgba(167,139,250,0.15)", color: "#a78bfa" },
+  { bg: "rgba(251,191,36,0.15)",  color: "#fbbf24" },
+  { bg: "rgba(74,222,128,0.15)",  color: "#4ade80" },
+  { bg: "rgba(251,113,133,0.15)", color: "#fb7185" },
+  { bg: "rgba(251,146,60,0.15)",  color: "#fb923c" },
+];
+
+function renderDescription(text: string) {
+  const lines = text.split("\n");
+  const result: React.ReactNode[] = [];
+  let key = 0;
+
+  for (const line of lines) {
+    if (!line.trim()) {
+      result.push(<div key={key++} className="h-3" />);
+    } else if (/^[A-Z][A-Z\s]+:/.test(line)) {
+      // Section heading like "WHAT IT DOES:" or "TECH: ..."
+      const colon = line.indexOf(":");
+      const heading = line.slice(0, colon + 1);
+      const rest = line.slice(colon + 1);
+      result.push(
+        <p key={key++} className="text-xs font-bold tracking-wider mb-1" style={{ color: "#38bdf8" }}>
+          {heading}{rest && <span className="font-normal tracking-normal text-slate-300"> {rest.trim()}</span>}
+        </p>
+      );
+    } else if (line.startsWith("- ")) {
+      result.push(
+        <p key={key++} className="text-sm text-slate-300 leading-relaxed pl-3" style={{ textIndent: "-0.75rem", paddingLeft: "0.75rem" }}>
+          <span style={{ color: "#4ade80" }}>–</span> {line.slice(2)}
+        </p>
+      );
+    } else {
+      result.push(
+        <p key={key++} className="text-sm text-slate-300 leading-relaxed">
+          {line}
+        </p>
+      );
+    }
+  }
+  return result;
+}
+
 export default function App() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,7 +157,7 @@ export default function App() {
               <button
                 key={g.id}
                 onClick={() => openDrawer(g)}
-                className="flex flex-col items-center gap-3 rounded-2xl p-2 text-center transition-all"
+                className="flex flex-col items-center gap-3 rounded-2xl p-2 text-center transition-all cursor-pointer"
                 style={{ background: "#0f172a", border: "1px solid #1e293b" }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.boxShadow =
@@ -175,8 +219,10 @@ export default function App() {
           {/* Close button */}
           <button
             onClick={closeDrawer}
-            className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full"
+            className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full cursor-pointer transition-colors"
             style={{ background: "#1e293b", color: "#94a3b8" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#334155"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#1e293b"; }}
           >
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M18 6L6 18M6 6l12 12"/>
@@ -193,11 +239,15 @@ export default function App() {
             />
             <div className="flex flex-col gap-2 justify-center min-w-0">
               <div className="flex flex-wrap gap-1">
-                {drawer.skills.slice(0, 4).map((s) => (
+                {drawer.skills.slice(0, 4).map((s, i) => (
                   <span
                     key={s}
-                    className="text-[10px] px-2 py-0.5 rounded-full"
-                    style={{ background: "#1e293b", color: "#94a3b8" }}
+                    className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                    style={{
+                      background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
+                      color: SKILL_COLORS[i % SKILL_COLORS.length].color,
+                      border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}40`,
+                    }}
                   >
                     {s}
                   </span>
@@ -206,19 +256,25 @@ export default function App() {
               <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
               <button
                 onClick={() => { setActive(drawer); closeDrawer(); }}
-                className="self-start px-6 py-2 rounded-xl font-bold text-sm text-black"
+                className="self-start px-6 py-2 rounded-xl font-bold text-sm text-black cursor-pointer transition-all"
                 style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #86efac, #22c55e)";
+                  (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #4ade80, #16a34a)";
+                  (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                }}
               >
-                Play
+                ▶ Play
               </button>
             </div>
           </div>
 
           {/* Row 2: description */}
           <div className="flex-1 overflow-y-auto p-6">
-            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap m-0">
-              {drawer.description}
-            </p>
+            {renderDescription(drawer.description)}
           </div>
         </div>
       )}
