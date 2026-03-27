@@ -175,11 +175,15 @@ export default function App() {
                 />
                 <div className="text-white font-bold text-sm leading-tight">{g.name}</div>
                 <div className="flex flex-wrap justify-center gap-1">
-                  {g.tags.slice(0, 2).map((t) => (
+                  {g.tags.slice(0, 2).map((t, i) => (
                     <span
                       key={t}
-                      className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: "#1e293b", color: "#94a3b8" }}
+                      className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                      style={{
+                        background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
+                        color: SKILL_COLORS[i % SKILL_COLORS.length].color,
+                        border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
+                      }}
                     >
                       {t}
                     </span>
