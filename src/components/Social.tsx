@@ -35,25 +35,25 @@ export function SocialShare() {
     <div className="social-share-buttons">
       <TwitterShareButton url={SHARE_URL} title={SHARE_TITLE}>
         <span className="social-share-chip">
-          <TwitterIcon size={36} round />
+          <TwitterIcon size={42} round />
           <span>X</span>
         </span>
       </TwitterShareButton>
       <FacebookShareButton url={SHARE_URL}>
         <span className="social-share-chip">
-          <FacebookIcon size={36} round />
+          <FacebookIcon size={42} round />
           <span>Facebook</span>
         </span>
       </FacebookShareButton>
       <WhatsappShareButton url={SHARE_URL} title={SHARE_TITLE} separator=" - ">
         <span className="social-share-chip">
-          <WhatsappIcon size={36} round />
+          <WhatsappIcon size={42} round />
           <span>WhatsApp</span>
         </span>
       </WhatsappShareButton>
       <LinkedinShareButton url={SHARE_URL} title={SHARE_TITLE} summary={SHARE_TITLE}>
         <span className="social-share-chip">
-          <LinkedinIcon size={36} round />
+          <LinkedinIcon size={42} round />
           <span>LinkedIn</span>
         </span>
       </LinkedinShareButton>

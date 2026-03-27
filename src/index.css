@@ -89,7 +89,7 @@ body {
 
 .shell-social-share-title {
   color: #67e8f9;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 900;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -97,7 +97,7 @@ body {
 
 .shell-social-drawer-close {
   color: #94a3b8;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   line-height: 1;
   font-weight: 900;
   padding: 4px 8px;
