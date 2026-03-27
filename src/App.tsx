@@ -142,8 +142,14 @@ export default function App() {
             placeholder="Search by topic or skill…"
             className="w-full max-w-md rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none text-left mt-6"
             style={{ background: "#0f172a", border: "1px solid #334155" }}
-            onFocus={(e) => (e.currentTarget.style.borderColor = "#0ea5e9")}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "#334155")}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = "#0ea5e9";
+              e.currentTarget.style.boxShadow = "0 0 25px rgba(14,165,233,0.8), 0 0 60px rgba(14,165,233,0.35)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = "#334155";
+              e.currentTarget.style.boxShadow = "none";
+            }}
           />
         </header>
 
@@ -161,7 +167,7 @@ export default function App() {
                 style={{ background: "#0f172a", border: "1px solid #1e293b" }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.boxShadow =
-                    "0 0 20px rgba(74,222,128,0.5), 0 0 60px rgba(74,222,128,0.15)";
+                    "0 0 25px rgba(74,222,128,0.8), 0 0 60px rgba(74,222,128,0.35)";
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLElement).style.boxShadow = "none";
