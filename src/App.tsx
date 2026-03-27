@@ -161,7 +161,7 @@ export default function App() {
                 style={{ background: "#0f172a", border: "1px solid #1e293b" }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.boxShadow =
-                    "0 0 0 2px rgba(74,222,128,0.7), 0 0 24px rgba(74,222,128,0.2)";
+                    "0 0 20px rgba(74,222,128,0.5), 0 0 60px rgba(74,222,128,0.15)";
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLElement).style.boxShadow = "none";
