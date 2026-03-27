@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SocialComments, SocialShare } from "./components/Social";
 
 interface Game {
   id: string;
@@ -63,6 +64,12 @@ export default function App() {
   const [active, setActive] = useState<Game | null>(null);
   const [drawer, setDrawer] = useState<Game | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showShareDrawer, setShowShareDrawer] = useState(false);
+  const [showCommentsDrawer, setShowCommentsDrawer] = useState(false);
+  const [isMobileLandscape, setIsMobileLandscape] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 1024 && window.innerWidth > window.innerHeight;
+  });
 
   useEffect(() => {
     const listFile = import.meta.env.DEV ? "/games-local.json" : "/games.json";
@@ -84,6 +91,16 @@ export default function App() {
       });
   }, []);
 
+  useEffect(() => {
+    const syncViewportMode = () => {
+      setIsMobileLandscape(window.innerWidth < 1024 && window.innerWidth > window.innerHeight);
+    };
+
+    syncViewportMode();
+    window.addEventListener("resize", syncViewportMode);
+    return () => window.removeEventListener("resize", syncViewportMode);
+  }, []);
+
   const openDrawer = (g: Game) => {
     setDrawer(g);
     setTimeout(() => setDrawerOpen(true), 10);
@@ -93,6 +110,46 @@ export default function App() {
     setDrawerOpen(false);
     setTimeout(() => setDrawer(null), 300);
   };
+
+  function closeSocialDrawers() {
+    setShowShareDrawer(false);
+    setShowCommentsDrawer(false);
+  }
+
+  async function handleShare() {
+    setShowCommentsDrawer(false);
+
+    const nav = navigator as Navigator & {
+      share?: (data: ShareData) => Promise<void>;
+      canShare?: (data?: ShareData) => boolean;
+      standalone?: boolean;
+    };
+    const shareData: ShareData = {
+      title: document.title || "Interactive Maths",
+      text: "Check out this maths game on Interactive Maths!",
+      url: "https://interactive-maths.vercel.app/",
+    };
+    const looksMobileOrPwa =
+      window.matchMedia?.("(display-mode: standalone)").matches
+      || !!nav.standalone
+      || navigator.maxTouchPoints > 0;
+
+    if (looksMobileOrPwa && typeof nav.share === "function" && (!nav.canShare || nav.canShare(shareData))) {
+      try {
+        await nav.share(shareData);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    setShowShareDrawer((open) => !open);
+  }
+
+  function toggleCommentsDrawer() {
+    setShowShareDrawer(false);
+    setShowCommentsDrawer((open) => !open);
+  }
 
   const filtered = games.filter((g) => {
     const q = query.toLowerCase();
@@ -288,6 +345,83 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <div className="shell-social-launchers">
+        <button
+          type="button"
+          onClick={handleShare}
+          className={`shell-social-launcher arcade-button ${showShareDrawer ? "is-active" : ""}`}
+          aria-expanded={showShareDrawer}
+          aria-controls="shell-social-share-drawer"
+          aria-label="Open share panel"
+        >
+          <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
+            <circle cx="18" cy="5.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
+            <circle cx="6" cy="12" r="2.25" stroke="currentColor" strokeWidth="1.9" />
+            <circle cx="18" cy="18.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
+            <path d="M8.1 10.95 15.9 6.55" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+            <path d="M8.1 13.05 15.9 17.45" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={toggleCommentsDrawer}
+          className={`shell-social-launcher arcade-button ${showCommentsDrawer ? "is-active" : ""}`}
+          aria-expanded={showCommentsDrawer}
+          aria-controls="shell-social-comments-drawer"
+          aria-label="Open comments panel"
+        >
+          <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
+            <path d="M6 6.5h12a2.5 2.5 0 0 1 2.5 2.5v6a2.5 2.5 0 0 1-2.5 2.5H10l-4 3v-3H6A2.5 2.5 0 0 1 3.5 15V9A2.5 2.5 0 0 1 6 6.5Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+
+      {(showShareDrawer || showCommentsDrawer) && (
+        <div className="shell-social-backdrop" onClick={closeSocialDrawers} />
+      )}
+
+      <div
+        id="shell-social-share-drawer"
+        className="shell-social-drawer"
+        aria-hidden={!showShareDrawer}
+        style={{
+          left: "1rem",
+          bottom: "1rem",
+          transform: showShareDrawer ? "translateY(0)" : "translateY(calc(100% + 1rem))",
+          background: "rgba(2,6,23,0.97)",
+          border: "3px solid rgba(56,189,248,0.4)",
+          borderRadius: "16px",
+          boxShadow: "0 -8px 32px rgba(0,0,0,0.6)",
+          width: "fit-content",
+          maxWidth: "calc(100vw - 2rem)",
+        }}
+      >
+        <div className="shell-social-drawer-header" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="shell-social-share-title">Spread the word...</div>
+          <button type="button" onClick={() => setShowShareDrawer(false)} className="shell-social-drawer-close" aria-label="Close share drawer">✕</button>
+        </div>
+        <SocialShare />
+      </div>
+
+      <div
+        id="shell-social-comments-drawer"
+        className="shell-social-comments-drawer"
+        aria-hidden={!showCommentsDrawer}
+        style={{
+          height: isMobileLandscape ? "100dvh" : "50vh",
+          maxHeight: isMobileLandscape ? "100dvh" : "50vh",
+          transform: showCommentsDrawer ? "translateY(0)" : "translateY(100%)",
+        }}
+      >
+        <div className="shell-social-comments-header">
+          <div className="shell-social-comments-title">Comments</div>
+          <button type="button" onClick={() => setShowCommentsDrawer(false)} className="shell-social-drawer-close" aria-label="Close comments drawer">✕</button>
+        </div>
+        <div className="shell-social-comments-shell">
+          <SocialComments />
+        </div>
+      </div>
     </div>
   );
 }

@@ -34,3 +34,112 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+.shell-social-launchers {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 61;
+  display: flex;
+  gap: 0.55rem;
+}
+
+.shell-social-launcher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: white;
+  padding: 0.5rem;
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.shell-social-launcher:hover,
+.shell-social-launcher.is-active {
+  transform: translateY(-2px);
+  filter: brightness(1.03);
+}
+
+.shell-social-launcher-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.shell-social-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  background: transparent;
+}
+
+.shell-social-drawer {
+  position: fixed;
+  z-index: 90;
+  transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+}
+
+.shell-social-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+}
+
+.shell-social-share-title {
+  color: #67e8f9;
+  font-size: 0.875rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.shell-social-drawer-close {
+  color: #94a3b8;
+  font-size: 1.75rem;
+  line-height: 1;
+  font-weight: 900;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+}
+
+.shell-social-comments-drawer {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+  background: #171717;
+  border-top: 3px solid rgba(250,204,21,0.4);
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.6);
+}
+
+.shell-social-comments-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #171717;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.shell-social-comments-title {
+  color: #fde047;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.shell-social-comments-shell {
+  flex: 1;
+  min-height: 0;
+}
