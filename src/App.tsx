@@ -233,7 +233,7 @@ export default function App() {
           <div className="flex gap-5 p-6 pb-4 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
             <img
               src={base(drawer.url) + "favicon.svg"}
-              className="w-20 h-20 object-contain shrink-0"
+              className="w-40 h-40 object-contain shrink-0"
               alt=""
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
             />
