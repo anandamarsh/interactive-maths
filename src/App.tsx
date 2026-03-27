@@ -246,7 +246,7 @@ export default function App() {
                     style={{
                       background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
                       color: SKILL_COLORS[i % SKILL_COLORS.length].color,
-                      border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}40`,
+                      border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
                     }}
                   >
                     {s}
