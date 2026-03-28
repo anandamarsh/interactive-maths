@@ -61,11 +61,14 @@ function renderDescription(text: string) {
   return result;
 }
 
-const partnerPillStyle: CSSProperties = {
-  background: "#030712",
-  color: "#ffffff",
-  border: "1px solid #ca8a04",
-  boxShadow: "0 2px 10px rgba(0, 0, 0, 0.35)",
+/** Gold ribbon — obvious partner marker, black text */
+const partnerTagGoldStyle: CSSProperties = {
+  background: "linear-gradient(180deg, #fde047 0%, #eab308 55%, #ca8a04 100%)",
+  color: "#0f172a",
+  border: "1px solid rgba(15, 23, 42, 0.35)",
+  boxShadow:
+    "0 2px 0 rgba(180, 83, 9, 0.45), 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.35)",
+  fontWeight: 800,
 };
 
 /** Top-right overlay when a partner game is embedded */
@@ -75,8 +78,8 @@ function PartnerIframeChrome({ url }: { url: string }) {
       <button
         type="button"
         onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
-        className="cursor-pointer rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-transform hover:scale-[1.02] active:scale-[0.98]"
-        style={partnerPillStyle}
+        className="cursor-pointer rounded-lg px-3 py-2 text-[11px] font-extrabold uppercase tracking-wider transition-transform hover:scale-[1.02] active:scale-[0.98]"
+        style={partnerTagGoldStyle}
         aria-label={`Open partner site in new tab: ${url}`}
       >
         Partner
@@ -254,7 +257,7 @@ export default function App() {
               <button
                 key={g.id}
                 onClick={() => openDrawer(g)}
-                className={`relative flex flex-col items-center gap-3 rounded-2xl p-2 text-center transition-all cursor-pointer ${g.thirdParty ? "pt-7" : ""}`}
+                className="relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl p-2 pt-3 text-center transition-all cursor-pointer"
                 style={{ background: "#0f172a", border: "1px solid #1e293b" }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.boxShadow =
@@ -266,8 +269,8 @@ export default function App() {
               >
                 {g.thirdParty && (
                   <span
-                    className="absolute top-2 right-2 z-10 rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wide"
-                    style={partnerPillStyle}
+                    className="pointer-events-none absolute top-0 right-0 z-20 rounded-bl-lg rounded-tr-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
+                    style={partnerTagGoldStyle}
                   >
                     Partner
                   </span>
@@ -339,8 +342,8 @@ export default function App() {
             <div className="flex flex-col gap-2 justify-center min-w-0">
               {drawer.thirdParty && (
                 <span
-                  className="self-start rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
-                  style={partnerPillStyle}
+                  className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
+                  style={partnerTagGoldStyle}
                 >
                   Partner site
                 </span>
