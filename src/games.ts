@@ -1,0 +1,146 @@
+/**
+ * games.json / games-local.json entries:
+ * - string: fetch `${baseUrl}manifest.json` (first-party contract)
+ * - object: inline manifest + playUrl (third-party or custom hosting)
+ */
+
+export interface GameManifest {
+  id?: string;
+  name?: string;
+  icon?: string;
+  tags?: string[];
+  subjects?: string[];
+  skills?: string[];
+  description?: string;
+  /** Set true in remote manifest to mark partner games */
+  thirdParty?: boolean;
+}
+
+export interface InlineGameEntry {
+  playUrl: string;
+  manifest: GameManifest;
+  /** Card / drawer image; defaults to favicon discovery for host */
+  imageUrl?: string;
+  /** Skip iframe; open playUrl in a new tab */
+  openInNewTab?: boolean;
+}
+
+export type GameListEntry = string | InlineGameEntry;
+
+export interface Game {
+  id: string;
+  name: string;
+  url: string;
+  tags: string[];
+  subjects: string[];
+  skills: string[];
+  description: string;
+  /** Card + drawer art (first-party: omit → favicon.svg on game origin) */
+  imageUrl?: string;
+  thirdParty: boolean;
+  openInNewTab: boolean;
+}
+
+export const base = (url: string) => url.replace(/\/?$/, "/");
+
+export function hostFromPlayUrl(playUrl: string): string | null {
+  try {
+    const u = playUrl.startsWith("http") ? playUrl : `https://${playUrl}`;
+    return new URL(u).hostname;
+  } catch {
+    return null;
+  }
+}
+
+/** Reliable favicon for external sites (img src, no CORS issues) */
+export function defaultExternalIconUrl(playUrl: string): string {
+  const host = hostFromPlayUrl(playUrl);
+  if (!host) return "";
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=128`;
+}
+
+function slugFromUrl(url: string): string {
+  const host = hostFromPlayUrl(url);
+  if (host) return host.replace(/^www\./, "").replace(/\./g, "-");
+  return "game";
+}
+
+export function isInlineGameEntry(entry: unknown): entry is InlineGameEntry {
+  if (entry === null || typeof entry !== "object") return false;
+  const o = entry as Record<string, unknown>;
+  return typeof o.playUrl === "string" && o.manifest !== null && typeof o.manifest === "object";
+}
+
+export function normalizeGame(
+  raw: GameManifest & {
+    url: string;
+    imageUrl?: string;
+    thirdParty?: boolean;
+    openInNewTab?: boolean;
+  }
+): Game {
+  const id = raw.id?.trim() || slugFromUrl(raw.url);
+  const name = raw.name?.trim() || "Game";
+  return {
+    id,
+    name,
+    url: raw.url.trim(),
+    tags: Array.isArray(raw.tags) ? raw.tags.map(String) : [],
+    subjects: Array.isArray(raw.subjects) ? raw.subjects.map(String) : ["maths"],
+    skills: Array.isArray(raw.skills) ? raw.skills.map(String) : [],
+    description: raw.description?.trim() || "",
+    imageUrl: raw.imageUrl,
+    thirdParty: Boolean(raw.thirdParty),
+    openInNewTab: Boolean(raw.openInNewTab),
+  };
+}
+
+export async function resolveGameEntry(entry: GameListEntry): Promise<Game | null> {
+  if (typeof entry === "string") {
+    try {
+      const r = await fetch(base(entry) + "manifest.json");
+      if (!r.ok) return null;
+      const m = (await r.json()) as GameManifest;
+      return normalizeGame({
+        ...m,
+        url: entry,
+        thirdParty: Boolean(m.thirdParty),
+        openInNewTab: false,
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  const playUrl = entry.playUrl.trim();
+  const imageUrl = entry.imageUrl?.trim() || defaultExternalIconUrl(playUrl);
+  return normalizeGame({
+    ...entry.manifest,
+    url: playUrl,
+    imageUrl: imageUrl || undefined,
+    thirdParty: true,
+    openInNewTab: Boolean(entry.openInNewTab),
+  });
+}
+
+export async function loadGamesList(entries: GameListEntry[]): Promise<Game[]> {
+  const results = await Promise.all(entries.map((e) => resolveGameEntry(e)));
+  return results.filter((g): g is Game => g !== null);
+}
+
+/** Ordered fallbacks for <img src> (try next on error) */
+export function getGameIconCandidates(game: Game): string[] {
+  const list: string[] = [];
+  if (game.imageUrl) list.push(game.imageUrl);
+  if (!game.thirdParty) {
+    list.push(`${base(game.url)}favicon.svg`);
+    list.push(`${base(game.url)}favicon.ico`);
+  } else {
+    const h = hostFromPlayUrl(game.url);
+    if (h) {
+      list.push(`https://icons.duckduckgo.com/ip3/${h}.ico`);
+      list.push(defaultExternalIconUrl(game.url));
+    }
+  }
+  return [...new Set(list.filter(Boolean))];
+}

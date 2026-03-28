@@ -1,5 +1,15 @@
 [
   "https://maths-distance-calculator.vercel.app/",
   "https://maths-angle-explorer.vercel.app/",
-  "http://locicomplex.com/"
+  {
+    "playUrl": "https://locicomplex.com/",
+    "manifest": {
+      "id": "locicomplex",
+      "name": "Loci Complex",
+      "tags": ["loci", "geometry", "construction", "partner"],
+      "subjects": ["maths"],
+      "skills": ["loci", "geometric constructions", "compass and ruler ideas"],
+      "description": "WHAT IT DOES:\nAn interactive space for exploring loci — the paths traced by points that move under geometric rules (fixed distance from a point, from a line, and more).\n\nPARTNER SITE:\nThis experience is built and hosted at locicomplex.com. You can play it inside the library or open it in a new browser tab if the embed stays blank (some sites block framing).\n\nWHAT IT TEACHES:\n– Intuition for circle, line, and combined loci\n– How constraints on a moving point shape its path\n– Visual links between compass constructions and locus problems\n\nTIP:\nIf you only see an empty frame, tap \"New tab\" — the game will run in a full window."
+    }
+  }
 ]

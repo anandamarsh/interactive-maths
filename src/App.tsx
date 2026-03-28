@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
 import { SocialComments, SocialShare } from "./components/Social";
+import { GameIcon } from "./components/GameIcon";
+import type { Game, GameListEntry } from "./games";
+import { loadGamesList } from "./games";
 
-interface Game {
-  id: string;
-  name: string;
-  url: string;
-  tags: string[];
-  subjects: string[];
-  skills: string[];
-  description: string;
+/** Avoid mixed-content when the shell is HTTPS */
+function iframeSrc(url: string): string {
+  if (typeof window === "undefined") return url;
+  if (window.location.protocol !== "https:" || !url.startsWith("http://")) return url;
+  try {
+    const u = new URL(url);
+    u.protocol = "https:";
+    return u.href;
+  } catch {
+    return url;
+  }
 }
-
-const base = (url: string) => url.replace(/\/?$/, "/");
 
 const SKILL_COLORS = [
   { bg: "rgba(56,189,248,0.15)",  color: "#38bdf8" },
@@ -75,20 +79,9 @@ export default function App() {
     const listFile = import.meta.env.DEV ? "/games-local.json" : "/games.json";
     fetch(listFile)
       .then((r) => r.json())
-      .then((urls: string[]) =>
-        Promise.all(
-          urls.map((url) =>
-            fetch(base(url) + "manifest.json")
-              .then((r) => r.json())
-              .then((m) => ({ ...m, url }))
-              .catch(() => null)
-          )
-        )
-      )
-      .then((results) => {
-        setGames(results.filter(Boolean));
-        setLoading(false);
-      });
+      .then((entries: GameListEntry[]) => loadGamesList(entries))
+      .then(setGames)
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -162,13 +155,22 @@ export default function App() {
     );
   });
 
+  function startPlay(g: Game) {
+    if (g.openInNewTab) {
+      window.open(g.url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setActive(g);
+  }
+
   if (active) {
     return (
       <div className="fixed inset-0" style={{ backgroundColor: "#020617" }}>
         <iframe
-          src={active.url}
+          src={iframeSrc(active.url)}
           className="w-full h-full border-0"
-          allow="autoplay"
+          allow="autoplay; fullscreen; clipboard-write; encrypted-media"
+          referrerPolicy="no-referrer-when-downgrade"
           title={active.name}
         />
         <button
@@ -220,7 +222,7 @@ export default function App() {
               <button
                 key={g.id}
                 onClick={() => openDrawer(g)}
-                className="flex flex-col items-center gap-3 rounded-2xl p-2 text-center transition-all cursor-pointer"
+                className="relative flex flex-col items-center gap-3 rounded-2xl p-2 text-center transition-all cursor-pointer"
                 style={{ background: "#0f172a", border: "1px solid #1e293b" }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.boxShadow =
@@ -230,13 +232,20 @@ export default function App() {
                   (e.currentTarget as HTMLElement).style.boxShadow = "none";
                 }}
               >
-                <img
-                  src={base(g.url) + "favicon.svg"}
-                  className="w-32 h-32 object-contain"
-                  alt=""
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                />
-                <div className="text-white font-bold text-sm leading-tight">{g.name}</div>
+                {g.thirdParty && (
+                  <span
+                    className="absolute top-2 right-2 z-10 text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                    style={{
+                      background: "rgba(251,191,36,0.2)",
+                      color: "#fbbf24",
+                      border: "1px solid rgba(251,191,36,0.55)",
+                    }}
+                  >
+                    Partner
+                  </span>
+                )}
+                <GameIcon game={g} className="w-32 h-32 object-contain" />
+                <div className="text-white font-bold text-sm leading-tight px-1">{g.name}</div>
                 <div className="flex flex-wrap justify-center gap-1">
                   {g.tags.slice(0, 2).map((t, i) => (
                     <span
@@ -298,13 +307,20 @@ export default function App() {
 
           {/* Row 1: icon + meta */}
           <div className="flex gap-5 p-6 pb-4 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
-            <img
-              src={base(drawer.url) + "favicon.svg"}
-              className="w-40 h-40 object-contain shrink-0"
-              alt=""
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-            />
+            <GameIcon game={drawer} className="w-40 h-40 object-contain shrink-0" alt="" />
             <div className="flex flex-col gap-2 justify-center min-w-0">
+              {drawer.thirdParty && (
+                <span
+                  className="self-start text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg"
+                  style={{
+                    background: "rgba(251,191,36,0.12)",
+                    color: "#fbbf24",
+                    border: "1px solid rgba(251,191,36,0.45)",
+                  }}
+                >
+                  Partner site · may open in frame or new tab
+                </span>
+              )}
               <div className="flex flex-wrap gap-1">
                 {drawer.skills.slice(0, 4).map((s, i) => (
                   <span
@@ -321,21 +337,54 @@ export default function App() {
                 ))}
               </div>
               <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
-              <button
-                onClick={() => { setActive(drawer); closeDrawer(); }}
-                className="self-start px-6 py-2 rounded-xl font-bold text-sm text-black cursor-pointer transition-all"
-                style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #86efac, #22c55e)";
-                  (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background = "linear-gradient(135deg, #4ade80, #16a34a)";
-                  (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-                }}
-              >
-                ▶ Play
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    startPlay(drawer);
+                    if (!drawer.openInNewTab) closeDrawer();
+                  }}
+                  className="px-6 py-2 rounded-xl font-bold text-sm text-black cursor-pointer transition-all"
+                  style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background =
+                      "linear-gradient(135deg, #86efac, #22c55e)";
+                    (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background =
+                      "linear-gradient(135deg, #4ade80, #16a34a)";
+                    (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                  }}
+                >
+                  {drawer.openInNewTab ? "▶ Open game" : "▶ Play here"}
+                </button>
+                {drawer.thirdParty && !drawer.openInNewTab && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open(drawer.url, "_blank", "noopener,noreferrer");
+                      closeDrawer();
+                    }}
+                    className="px-5 py-2 rounded-xl font-bold text-sm cursor-pointer transition-all"
+                    style={{
+                      background: "#1e293b",
+                      color: "#e2e8f0",
+                      border: "1px solid #475569",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = "#38bdf8";
+                      (e.currentTarget as HTMLElement).style.color = "#38bdf8";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = "#475569";
+                      (e.currentTarget as HTMLElement).style.color = "#e2e8f0";
+                    }}
+                  >
+                    ↗ New tab
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
