@@ -203,7 +203,7 @@ export default function App() {
         <iframe
           src={iframeSrc(active.url)}
           className="w-full h-full border-0"
-          allow="autoplay; fullscreen; clipboard-write; encrypted-media"
+          allow="autoplay; fullscreen; clipboard-write; encrypted-media; web-share"
           referrerPolicy="no-referrer-when-downgrade"
           title={active.name}
         />
