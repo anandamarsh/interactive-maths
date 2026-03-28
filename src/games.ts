@@ -52,13 +52,6 @@ export function hostFromPlayUrl(playUrl: string): string | null {
   }
 }
 
-/** Reliable favicon for external sites (img src, no CORS issues) */
-export function defaultExternalIconUrl(playUrl: string): string {
-  const host = hostFromPlayUrl(playUrl);
-  if (!host) return "";
-  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=128`;
-}
-
 function slugFromUrl(url: string): string {
   const host = hostFromPlayUrl(url);
   if (host) return host.replace(/^www\./, "").replace(/\./g, "-");
@@ -113,7 +106,7 @@ export async function resolveGameEntry(entry: GameListEntry): Promise<Game | nul
   }
 
   const playUrl = entry.playUrl.trim();
-  const imageUrl = entry.imageUrl?.trim() || defaultExternalIconUrl(playUrl);
+  const imageUrl = entry.imageUrl?.trim();
   return normalizeGame({
     ...entry.manifest,
     url: playUrl,
@@ -128,19 +121,11 @@ export async function loadGamesList(entries: GameListEntry[]): Promise<Game[]> {
   return results.filter((g): g is Game => g !== null);
 }
 
-/** Ordered fallbacks for <img src> (try next on error) */
+/** Ordered fallbacks for <img src> (first-party games only; partners use PartnerGameGlyph) */
 export function getGameIconCandidates(game: Game): string[] {
   const list: string[] = [];
   if (game.imageUrl) list.push(game.imageUrl);
-  if (!game.thirdParty) {
-    list.push(`${base(game.url)}favicon.svg`);
-    list.push(`${base(game.url)}favicon.ico`);
-  } else {
-    const h = hostFromPlayUrl(game.url);
-    if (h) {
-      list.push(`https://icons.duckduckgo.com/ip3/${h}.ico`);
-      list.push(defaultExternalIconUrl(game.url));
-    }
-  }
+  list.push(`${base(game.url)}favicon.svg`);
+  list.push(`${base(game.url)}favicon.ico`);
   return [...new Set(list.filter(Boolean))];
 }

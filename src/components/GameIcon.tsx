@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Game } from "../games";
 import { getGameIconCandidates } from "../games";
+import { PartnerGameGlyph } from "./PartnerGameGlyph";
 
 export function GameIcon({
   game,
@@ -11,6 +12,10 @@ export function GameIcon({
   className?: string;
   alt?: string;
 }) {
+  if (game.thirdParty) {
+    return <PartnerGameGlyph className={className} />;
+  }
+
   const candidates = useMemo(() => getGameIconCandidates(game), [game]);
   const [index, setIndex] = useState(0);
 

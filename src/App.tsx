@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { SocialComments, SocialShare } from "./components/Social";
 import { GameIcon } from "./components/GameIcon";
 import type { Game, GameListEntry } from "./games";
@@ -59,6 +59,37 @@ function renderDescription(text: string) {
     }
   }
   return result;
+}
+
+const partnerPillStyle: CSSProperties = {
+  background: "#030712",
+  color: "#ffffff",
+  border: "1px solid #ca8a04",
+  boxShadow: "0 2px 10px rgba(0, 0, 0, 0.35)",
+};
+
+/** Top-right overlay when a partner game is embedded */
+function PartnerIframeChrome({ url }: { url: string }) {
+  return (
+    <div className="absolute top-3 right-3 z-[30] flex max-w-[min(92vw,300px)] flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+        className="cursor-pointer rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-transform hover:scale-[1.02] active:scale-[0.98]"
+        style={partnerPillStyle}
+        aria-label={`Open partner site in new tab: ${url}`}
+      >
+        Partner
+      </button>
+      <p
+        className="m-0 max-w-full text-right text-[9px] leading-snug"
+        style={{ color: "#94a3b8", wordBreak: "break-all" }}
+        title={url}
+      >
+        {url}
+      </p>
+    </div>
+  );
 }
 
 export default function App() {
@@ -173,10 +204,11 @@ export default function App() {
           referrerPolicy="no-referrer-when-downgrade"
           title={active.name}
         />
+        {active.thirdParty && <PartnerIframeChrome url={active.url} />}
         <button
           onClick={() => setActive(null)}
           title="Home"
-          className="arcade-button absolute top-2 left-2 w-10 h-10 p-2"
+          className="arcade-button absolute top-2 left-2 z-[40] w-10 h-10 p-2"
         >
           <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
             <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
@@ -222,7 +254,7 @@ export default function App() {
               <button
                 key={g.id}
                 onClick={() => openDrawer(g)}
-                className="relative flex flex-col items-center gap-3 rounded-2xl p-2 text-center transition-all cursor-pointer"
+                className={`relative flex flex-col items-center gap-3 rounded-2xl p-2 text-center transition-all cursor-pointer ${g.thirdParty ? "pt-7" : ""}`}
                 style={{ background: "#0f172a", border: "1px solid #1e293b" }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLElement).style.boxShadow =
@@ -234,12 +266,8 @@ export default function App() {
               >
                 {g.thirdParty && (
                   <span
-                    className="absolute top-2 right-2 z-10 text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
-                    style={{
-                      background: "rgba(251,191,36,0.2)",
-                      color: "#fbbf24",
-                      border: "1px solid rgba(251,191,36,0.55)",
-                    }}
+                    className="absolute top-2 right-2 z-10 rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wide"
+                    style={partnerPillStyle}
                   >
                     Partner
                   </span>
@@ -311,14 +339,10 @@ export default function App() {
             <div className="flex flex-col gap-2 justify-center min-w-0">
               {drawer.thirdParty && (
                 <span
-                  className="self-start text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg"
-                  style={{
-                    background: "rgba(251,191,36,0.12)",
-                    color: "#fbbf24",
-                    border: "1px solid rgba(251,191,36,0.45)",
-                  }}
+                  className="self-start rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+                  style={partnerPillStyle}
                 >
-                  Partner site · may open in frame or new tab
+                  Partner site
                 </span>
               )}
               <div className="flex flex-wrap gap-1">
@@ -385,6 +409,15 @@ export default function App() {
                   </button>
                 )}
               </div>
+              {drawer.thirdParty && (
+                <p
+                  className="mt-2 max-w-full text-[10px] leading-snug"
+                  style={{ color: "#64748b", wordBreak: "break-all" }}
+                  title={drawer.url}
+                >
+                  {drawer.url}
+                </p>
+              )}
             </div>
           </div>
 
