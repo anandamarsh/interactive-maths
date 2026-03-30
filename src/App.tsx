@@ -113,15 +113,56 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
     if (!track || ordered.length === 0) return;
 
     let raf = 0;
+    let cancelled = false;
+
+    const stop = () => {
+      if (raf) {
+        window.cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
+
     const step = () => {
+      if (cancelled) return;
       const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
       if (track.scrollLeft >= maxScroll) return;
       track.scrollLeft += 0.35;
       raf = window.requestAnimationFrame(step);
     };
 
-    raf = window.requestAnimationFrame(step);
-    return () => window.cancelAnimationFrame(raf);
+    const start = () => {
+      stop();
+      track.scrollLeft = 0;
+      if (track.scrollWidth <= track.clientWidth) return;
+      raf = window.requestAnimationFrame(step);
+    };
+
+    const onImageLoad = () => start();
+    const images = Array.from(track.querySelectorAll("img"));
+
+    for (const image of images) {
+      if (!image.complete) {
+        image.addEventListener("load", onImageLoad);
+        image.addEventListener("error", onImageLoad);
+      }
+    }
+
+    const observer = new ResizeObserver(() => {
+      start();
+    });
+    observer.observe(track);
+
+    start();
+
+    return () => {
+      cancelled = true;
+      stop();
+      observer.disconnect();
+      for (const image of images) {
+        image.removeEventListener("load", onImageLoad);
+        image.removeEventListener("error", onImageLoad);
+      }
+    };
   }, [ordered]);
 
   if (ordered.length === 0) return null;
