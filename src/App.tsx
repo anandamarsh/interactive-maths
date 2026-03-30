@@ -120,41 +120,47 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
     const track = trackRef.current;
     if (!track || ordered.length === 0) return;
 
-    let interval = 0;
+    let rafId = 0;
     let cancelled = false;
     let direction = 1;
+    let lastTime = 0;
 
     const stop = () => {
-      if (interval) {
-        window.clearInterval(interval);
-        interval = 0;
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
       }
     };
 
-    const step = () => {
+    const step = (time: number) => {
       if (cancelled) return;
+      const delta = lastTime ? Math.min(time - lastTime, 64) : 16;
+      lastTime = time;
+
       const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
       if (maxScroll <= 0) return;
 
-      const next = track.scrollLeft + (0.35 * direction);
+      const next = track.scrollLeft + (0.35 * direction * delta / 16);
       if (next >= maxScroll) {
-        track.scrollLeft = maxScroll;
+        track.scrollTo(maxScroll, 0);
         direction = -1;
       } else if (next <= 0) {
-        track.scrollLeft = 0;
+        track.scrollTo(0, 0);
         direction = 1;
       } else {
-        track.scrollLeft = next;
+        track.scrollTo(next, 0);
       }
+      rafId = requestAnimationFrame(step);
     };
 
     const start = () => {
       stop();
       if (autoplayCancelledRef.current) return;
       direction = 1;
-      track.scrollLeft = 0;
+      lastTime = 0;
+      track.scrollTo(0, 0);
       if (track.scrollWidth <= track.clientWidth) return;
-      interval = window.setInterval(step, 16);
+      rafId = requestAnimationFrame(step);
     };
 
     const images = Array.from(track.querySelectorAll("img"));
@@ -229,6 +235,7 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
     return () => {
       cancelled = true;
       stop();
+      lastTime = 0;
       observer.disconnect();
       track.removeEventListener("pointerdown", onPointerDown);
       track.removeEventListener("pointermove", onPointerMove);
@@ -255,7 +262,6 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
         className="hide-scrollbar flex gap-3 overflow-x-auto overflow-y-hidden rounded-2xl"
         style={{
           scrollBehavior: "auto",
-          WebkitOverflowScrolling: "touch",
           touchAction: "pan-x",
           height: "min(44svh, 280px)",
           opacity: allImagesLoaded ? 1 : 0,
@@ -579,7 +585,7 @@ export default function App() {
                       startPlay(drawer);
                       if (!drawer.openInNewTab) closeDrawer();
                     }}
-                    className="mt-2 w-full rounded-xl px-6 py-2 text-sm font-bold text-black cursor-pointer transition-all"
+                    className="mt-2 self-start rounded-xl px-6 py-2 text-sm font-bold text-black cursor-pointer transition-all"
                     style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
                     onMouseEnter={(e) => {
                       (e.currentTarget as HTMLElement).style.background =
