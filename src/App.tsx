@@ -108,23 +108,25 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
   const trackRef = useRef<HTMLDivElement | null>(null);
   const ordered = useMemo(() => shuffle(screenshots), [screenshots]);
   const [allImagesLoaded, setAllImagesLoaded] = useState(false);
+  const autoplayCancelledRef = useRef(false);
 
   useEffect(() => {
     setAllImagesLoaded(false);
+    autoplayCancelledRef.current = false;
   }, [ordered]);
 
   useEffect(() => {
     const track = trackRef.current;
     if (!track || ordered.length === 0) return;
 
-    let raf = 0;
+    let interval = 0;
     let cancelled = false;
     let direction = 1;
 
     const stop = () => {
-      if (raf) {
-        window.cancelAnimationFrame(raf);
-        raf = 0;
+      if (interval) {
+        window.clearInterval(interval);
+        interval = 0;
       }
     };
 
@@ -143,15 +145,15 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
       } else {
         track.scrollLeft = next;
       }
-      raf = window.requestAnimationFrame(step);
     };
 
     const start = () => {
       stop();
+      if (autoplayCancelledRef.current) return;
       direction = 1;
       track.scrollLeft = 0;
       if (track.scrollWidth <= track.clientWidth) return;
-      raf = window.requestAnimationFrame(step);
+      interval = window.setInterval(step, 16);
     };
 
     const images = Array.from(track.querySelectorAll("img"));
@@ -179,10 +181,21 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
     });
     observer.observe(track);
 
+    const cancelAutoplay = () => {
+      autoplayCancelledRef.current = true;
+      stop();
+    };
+    track.addEventListener("pointerdown", cancelAutoplay);
+    track.addEventListener("touchstart", cancelAutoplay, { passive: true });
+    track.addEventListener("wheel", cancelAutoplay, { passive: true });
+
     return () => {
       cancelled = true;
       stop();
       observer.disconnect();
+      track.removeEventListener("pointerdown", cancelAutoplay);
+      track.removeEventListener("touchstart", cancelAutoplay);
+      track.removeEventListener("wheel", cancelAutoplay);
       for (const image of images) {
         image.removeEventListener("load", markImageReady);
         image.removeEventListener("error", markImageReady);
@@ -199,6 +212,8 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
         className="hide-scrollbar flex gap-3 overflow-x-auto overflow-y-hidden rounded-2xl"
         style={{
           scrollBehavior: "auto",
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-x",
           height: "min(44svh, 280px)",
           opacity: allImagesLoaded ? 1 : 0,
           transition: "opacity 0.18s ease",
