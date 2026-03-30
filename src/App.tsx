@@ -107,6 +107,11 @@ function shuffle<T>(items: T[]): T[] {
 function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name: string }) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const ordered = useMemo(() => shuffle(screenshots), [screenshots]);
+  const [allImagesLoaded, setAllImagesLoaded] = useState(false);
+
+  useEffect(() => {
+    setAllImagesLoaded(false);
+  }, [ordered]);
 
   useEffect(() => {
     const track = trackRef.current;
@@ -114,6 +119,7 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
 
     let raf = 0;
     let cancelled = false;
+    let direction = 1;
 
     const stop = () => {
       if (raf) {
@@ -125,45 +131,64 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
     const step = () => {
       if (cancelled) return;
       const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
-      if (track.scrollLeft >= maxScroll) return;
-      track.scrollLeft += 0.35;
+      if (maxScroll <= 0) return;
+
+      const next = track.scrollLeft + (0.35 * direction);
+      if (next >= maxScroll) {
+        track.scrollLeft = maxScroll;
+        direction = -1;
+      } else if (next <= 0) {
+        track.scrollLeft = 0;
+        direction = 1;
+      } else {
+        track.scrollLeft = next;
+      }
       raf = window.requestAnimationFrame(step);
     };
 
     const start = () => {
       stop();
+      direction = 1;
       track.scrollLeft = 0;
       if (track.scrollWidth <= track.clientWidth) return;
       raf = window.requestAnimationFrame(step);
     };
 
-    const onImageLoad = () => start();
     const images = Array.from(track.querySelectorAll("img"));
+    let loadedCount = 0;
+
+    const markImageReady = () => {
+      loadedCount += 1;
+      if (loadedCount >= images.length) {
+        setAllImagesLoaded(true);
+        start();
+      }
+    };
 
     for (const image of images) {
-      if (!image.complete) {
-        image.addEventListener("load", onImageLoad);
-        image.addEventListener("error", onImageLoad);
+      if (image.complete) {
+        markImageReady();
+      } else {
+        image.addEventListener("load", markImageReady, { once: true });
+        image.addEventListener("error", markImageReady, { once: true });
       }
     }
 
     const observer = new ResizeObserver(() => {
-      start();
+      if (allImagesLoaded) start();
     });
     observer.observe(track);
-
-    start();
 
     return () => {
       cancelled = true;
       stop();
       observer.disconnect();
       for (const image of images) {
-        image.removeEventListener("load", onImageLoad);
-        image.removeEventListener("error", onImageLoad);
+        image.removeEventListener("load", markImageReady);
+        image.removeEventListener("error", markImageReady);
       }
     };
-  }, [ordered]);
+  }, [allImagesLoaded, ordered]);
 
   if (ordered.length === 0) return null;
 
@@ -175,6 +200,8 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
         style={{
           scrollBehavior: "auto",
           height: "min(44svh, 280px)",
+          opacity: allImagesLoaded ? 1 : 0,
+          transition: "opacity 0.18s ease",
         }}
       >
         {ordered.map((src, index) => (
@@ -208,6 +235,10 @@ export default function App() {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 1024 && window.innerWidth > window.innerHeight;
   });
+  const [isMobilePortrait, setIsMobilePortrait] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 1024 && window.innerWidth <= window.innerHeight;
+  });
 
   useEffect(() => {
     const listFile = import.meta.env.DEV ? "/games-local.json" : "/games.json";
@@ -221,6 +252,7 @@ export default function App() {
   useEffect(() => {
     const syncViewportMode = () => {
       setIsMobileLandscape(window.innerWidth < 1024 && window.innerWidth > window.innerHeight);
+      setIsMobilePortrait(window.innerWidth < 1024 && window.innerWidth <= window.innerHeight);
     };
 
     syncViewportMode();
@@ -462,18 +494,76 @@ export default function App() {
           >
 
           {/* Row 1: icon + meta */}
-          <div className="flex gap-5 p-4 pb-3 pt-10 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
-            <GameIcon game={drawer} className="w-40 h-40 object-contain shrink-0" alt="" />
-            <div className="flex flex-col gap-2 justify-center min-w-0">
-              {drawer.thirdParty && (
-                <span
-                  className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
-                  style={partnerTagGoldStyle}
-                >
-                  Partner site
-                </span>
-              )}
-              <div className="flex flex-wrap gap-1">
+          {isMobilePortrait ? (
+            <div className="p-4 pb-3 pt-10 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
+              <div className="flex items-center gap-4">
+                <GameIcon game={drawer} className="w-32 h-32 object-contain shrink-0" alt="" />
+                <div className="flex min-w-0 flex-1 flex-col gap-2 justify-center">
+                  {drawer.thirdParty && (
+                    <span
+                      className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
+                      style={partnerTagGoldStyle}
+                    >
+                      Partner site
+                    </span>
+                  )}
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
+                    {drawer.buildStamp && !drawer.thirdParty && (
+                      <p className="text-[10px] leading-none text-sky-300/80">
+                        Build {drawer.buildStamp}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      startPlay(drawer);
+                      if (!drawer.openInNewTab) closeDrawer();
+                    }}
+                    className="mt-2 w-full rounded-xl px-6 py-2 text-sm font-bold text-black cursor-pointer transition-all"
+                    style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background =
+                        "linear-gradient(135deg, #86efac, #22c55e)";
+                      (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background =
+                        "linear-gradient(135deg, #4ade80, #16a34a)";
+                      (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                    }}
+                  >
+                    {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
+                  </button>
+                  {drawer.thirdParty && !drawer.openInNewTab && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.open(drawer.url, "_blank", "noopener,noreferrer");
+                        closeDrawer();
+                      }}
+                      className="w-full rounded-xl px-5 py-2 text-sm font-bold cursor-pointer transition-all"
+                      style={{
+                        background: "#1e293b",
+                        color: "#e2e8f0",
+                        border: "1px solid #475569",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.borderColor = "#38bdf8";
+                        (e.currentTarget as HTMLElement).style.color = "#38bdf8";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.borderColor = "#475569";
+                        (e.currentTarget as HTMLElement).style.color = "#e2e8f0";
+                      }}
+                    >
+                      ↗ New tab
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-1">
                 {drawer.skills.slice(0, 4).map((s, i) => (
                   <span
                     key={s}
@@ -488,65 +578,9 @@ export default function App() {
                   </span>
                 ))}
               </div>
-              <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
-                <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
-                {drawer.buildStamp && !drawer.thirdParty && (
-                  <p className="pb-0.5 text-[10px] leading-none text-sky-300/80">
-                    {drawer.buildStamp}
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    startPlay(drawer);
-                    if (!drawer.openInNewTab) closeDrawer();
-                  }}
-                  className="px-6 py-2 rounded-xl font-bold text-sm text-black cursor-pointer transition-all"
-                  style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.background =
-                      "linear-gradient(135deg, #86efac, #22c55e)";
-                    (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background =
-                      "linear-gradient(135deg, #4ade80, #16a34a)";
-                    (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-                  }}
-                >
-                  {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
-                </button>
-                {drawer.thirdParty && !drawer.openInNewTab && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      window.open(drawer.url, "_blank", "noopener,noreferrer");
-                      closeDrawer();
-                    }}
-                    className="px-5 py-2 rounded-xl font-bold text-sm cursor-pointer transition-all"
-                    style={{
-                      background: "#1e293b",
-                      color: "#e2e8f0",
-                      border: "1px solid #475569",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor = "#38bdf8";
-                      (e.currentTarget as HTMLElement).style.color = "#38bdf8";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor = "#475569";
-                      (e.currentTarget as HTMLElement).style.color = "#e2e8f0";
-                    }}
-                  >
-                    ↗ New tab
-                  </button>
-                )}
-              </div>
               {drawer.thirdParty && (
                 <p
-                  className="mt-2 max-w-full text-[10px] leading-snug"
+                  className="mt-3 max-w-full text-[10px] leading-snug"
                   style={{ color: "#64748b", wordBreak: "break-all" }}
                   title={drawer.url}
                 >
@@ -554,7 +588,101 @@ export default function App() {
                 </p>
               )}
             </div>
-          </div>
+          ) : (
+            <div className="flex gap-5 p-4 pb-3 pt-10 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
+              <GameIcon game={drawer} className="w-40 h-40 object-contain shrink-0" alt="" />
+              <div className="flex flex-col gap-2 justify-center min-w-0">
+                {drawer.thirdParty && (
+                  <span
+                    className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
+                    style={partnerTagGoldStyle}
+                  >
+                    Partner site
+                  </span>
+                )}
+                <div className="flex flex-wrap gap-1">
+                  {drawer.skills.slice(0, 4).map((s, i) => (
+                    <span
+                      key={s}
+                      className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                      style={{
+                        background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
+                        color: SKILL_COLORS[i % SKILL_COLORS.length].color,
+                        border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
+                  <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
+                  {drawer.buildStamp && !drawer.thirdParty && (
+                    <p className="pb-0.5 text-[10px] leading-none text-sky-300/80">
+                      Build {drawer.buildStamp}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      startPlay(drawer);
+                      if (!drawer.openInNewTab) closeDrawer();
+                    }}
+                    className="px-6 py-2 rounded-xl font-bold text-sm text-black cursor-pointer transition-all"
+                    style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.background =
+                        "linear-gradient(135deg, #86efac, #22c55e)";
+                      (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.background =
+                        "linear-gradient(135deg, #4ade80, #16a34a)";
+                      (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                    }}
+                  >
+                    {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
+                  </button>
+                  {drawer.thirdParty && !drawer.openInNewTab && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.open(drawer.url, "_blank", "noopener,noreferrer");
+                        closeDrawer();
+                      }}
+                      className="px-5 py-2 rounded-xl font-bold text-sm cursor-pointer transition-all"
+                      style={{
+                        background: "#1e293b",
+                        color: "#e2e8f0",
+                        border: "1px solid #475569",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.borderColor = "#38bdf8";
+                        (e.currentTarget as HTMLElement).style.color = "#38bdf8";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.borderColor = "#475569";
+                        (e.currentTarget as HTMLElement).style.color = "#e2e8f0";
+                      }}
+                    >
+                      ↗ New tab
+                    </button>
+                  )}
+                </div>
+                {drawer.thirdParty && (
+                  <p
+                    className="mt-2 max-w-full text-[10px] leading-snug"
+                    style={{ color: "#64748b", wordBreak: "break-all" }}
+                    title={drawer.url}
+                  >
+                    {drawer.url}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="lg:flex-1 lg:overflow-y-auto">
             {drawer.screenshots.length > 0 && (
