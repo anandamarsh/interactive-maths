@@ -109,6 +109,7 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
   const ordered = useMemo(() => shuffle(screenshots), [screenshots]);
   const [allImagesLoaded, setAllImagesLoaded] = useState(false);
   const autoplayCancelledRef = useRef(false);
+  const dragStartXRef = useRef<number | null>(null);
 
   useEffect(() => {
     setAllImagesLoaded(false);
@@ -185,16 +186,58 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
       autoplayCancelledRef.current = true;
       stop();
     };
-    track.addEventListener("pointerdown", cancelAutoplay);
-    track.addEventListener("touchstart", cancelAutoplay, { passive: true });
+
+    const resetDrag = () => {
+      dragStartXRef.current = null;
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      dragStartXRef.current = event.clientX;
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (dragStartXRef.current === null) return;
+      if (Math.abs(event.clientX - dragStartXRef.current) > 6) {
+        cancelAutoplay();
+        resetDrag();
+      }
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      dragStartXRef.current = event.touches[0]?.clientX ?? null;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      const currentX = event.touches[0]?.clientX;
+      if (dragStartXRef.current === null || currentX === undefined) return;
+      if (Math.abs(currentX - dragStartXRef.current) > 6) {
+        cancelAutoplay();
+        resetDrag();
+      }
+    };
+
+    track.addEventListener("pointerdown", onPointerDown);
+    track.addEventListener("pointermove", onPointerMove);
+    track.addEventListener("pointerup", resetDrag);
+    track.addEventListener("pointercancel", resetDrag);
+    track.addEventListener("touchstart", onTouchStart, { passive: true });
+    track.addEventListener("touchmove", onTouchMove, { passive: true });
+    track.addEventListener("touchend", resetDrag);
+    track.addEventListener("touchcancel", resetDrag);
     track.addEventListener("wheel", cancelAutoplay, { passive: true });
 
     return () => {
       cancelled = true;
       stop();
       observer.disconnect();
-      track.removeEventListener("pointerdown", cancelAutoplay);
-      track.removeEventListener("touchstart", cancelAutoplay);
+      track.removeEventListener("pointerdown", onPointerDown);
+      track.removeEventListener("pointermove", onPointerMove);
+      track.removeEventListener("pointerup", resetDrag);
+      track.removeEventListener("pointercancel", resetDrag);
+      track.removeEventListener("touchstart", onTouchStart);
+      track.removeEventListener("touchmove", onTouchMove);
+      track.removeEventListener("touchend", resetDrag);
+      track.removeEventListener("touchcancel", resetDrag);
       track.removeEventListener("wheel", cancelAutoplay);
       for (const image of images) {
         image.removeEventListener("load", markImageReady);
