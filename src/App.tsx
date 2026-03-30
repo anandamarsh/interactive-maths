@@ -287,7 +287,6 @@ export default function App() {
           <p className="text-xs font-bold tracking-[0.25em] uppercase text-sky-400 mb-2">
             Interactive Maths
           </p>
-          <h1 className="text-4xl font-black text-white mb-1">Game Library</h1>
 
           <input
             value={query}

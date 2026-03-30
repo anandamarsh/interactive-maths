@@ -46,8 +46,8 @@ body {
 
 .shell-social-launchers {
   position: fixed;
-  left: 1rem;
-  bottom: 1rem;
+  top: 1rem;
+  right: 1rem;
   z-index: 61;
   display: flex;
   gap: 0.55rem;
