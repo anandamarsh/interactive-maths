@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SocialComments, SocialShare } from "./components/Social";
 import { GameIcon } from "./components/GameIcon";
 import type { Game, GameListEntry } from "./games";
@@ -91,6 +91,65 @@ function PartnerIframeChrome({ url }: { url: string }) {
       >
         {url}
       </p>
+    </div>
+  );
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const next = [...items];
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+  return next;
+}
+
+function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name: string }) {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const ordered = useMemo(() => shuffle(screenshots), [screenshots]);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track || ordered.length === 0) return;
+
+    let raf = 0;
+    const step = () => {
+      const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+      if (track.scrollLeft >= maxScroll) return;
+      track.scrollLeft += 0.35;
+      raf = window.requestAnimationFrame(step);
+    };
+
+    raf = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(raf);
+  }, [ordered]);
+
+  if (ordered.length === 0) return null;
+
+  return (
+    <div className="shrink-0 border-b p-4" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+      <div
+        ref={trackRef}
+        className="hide-scrollbar flex gap-3 overflow-x-auto overflow-y-hidden rounded-2xl"
+        style={{
+          scrollBehavior: "auto",
+          height: "min(44svh, 280px)",
+        }}
+      >
+        {ordered.map((src, index) => (
+          <img
+            key={`${src}-${index}`}
+            src={src}
+            alt={`${name} screenshot ${index + 1}`}
+            className="block h-full w-auto shrink-0 rounded-2xl object-contain"
+            style={{
+              background: "#020617",
+              border: "1px solid rgba(56,189,248,0.22)",
+              boxShadow: "0 18px 40px rgba(2,6,23,0.4)",
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -276,7 +335,14 @@ export default function App() {
                   </span>
                 )}
                 <GameIcon game={g} className="w-32 h-32 object-contain" />
-                <div className="text-white font-bold text-sm leading-tight px-1">{g.name}</div>
+                <div className="px-1">
+                  <div className="text-white font-bold text-sm leading-tight">{g.name}</div>
+                  {g.buildStamp && !g.thirdParty && (
+                    <div className="mt-1 text-[10px] leading-none text-sky-300/80">
+                      {g.buildStamp}
+                    </div>
+                  )}
+                </div>
                 <div className="flex flex-wrap justify-center gap-1">
                   {g.tags.slice(0, 2).map((t, i) => (
                     <span
@@ -312,32 +378,54 @@ export default function App() {
 
       {/* Drawer */}
       {drawer && (
-        <div
-          className="fixed bottom-0 left-0 right-0 z-50 flex flex-col md:rounded-t-2xl overflow-hidden"
-          style={{
-            background: "#0f172a",
-            border: "1px solid #1e293b",
-            transform: drawerOpen ? "translateY(0)" : "translateY(100%)",
-            transition: "transform 0.3s ease",
-            maxHeight: "100dvh",
-            height: "100dvh",
-          }}
-        >
+        <>
+          <button
+            onClick={closeDrawer}
+            title="Home"
+            className="fixed top-1.5 left-2 z-[60] arcade-button w-10 h-10 p-2"
+            style={{
+              transform: drawerOpen ? "translateY(0)" : "translateY(100dvh)",
+              transition: "transform 0.3s ease",
+            }}
+          >
+            <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+          </button>
+
           {/* Close button */}
           <button
             onClick={closeDrawer}
-            className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full cursor-pointer transition-colors"
-            style={{ background: "#1e293b", color: "#94a3b8" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#334155"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#1e293b"; }}
+            className="fixed top-1.5 right-2 z-[60] w-8 h-8 flex items-center justify-center rounded-full cursor-pointer transition-colors"
+            style={{
+              background: "#14532d",
+              color: "#86efac",
+              border: "1px solid #4ade80",
+              transform: drawerOpen ? "translateY(0)" : "translateY(100dvh)",
+              transition: "transform 0.3s ease, background 0.15s ease",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#166534"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#14532d"; }}
           >
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
           </button>
 
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 flex flex-col overflow-y-auto overflow-x-hidden lg:overflow-hidden lg:rounded-t-2xl"
+            style={{
+              background: "#0f172a",
+              border: "1px solid #1e293b",
+              transform: drawerOpen ? "translateY(0)" : "translateY(100%)",
+              transition: "transform 0.3s ease",
+              maxHeight: "100dvh",
+              height: "100dvh",
+            }}
+          >
+
           {/* Row 1: icon + meta */}
-          <div className="flex gap-5 p-6 pb-4 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
+          <div className="flex gap-5 p-4 pb-3 pt-10 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
             <GameIcon game={drawer} className="w-40 h-40 object-contain shrink-0" alt="" />
             <div className="flex flex-col gap-2 justify-center min-w-0">
               {drawer.thirdParty && (
@@ -363,7 +451,14 @@ export default function App() {
                   </span>
                 ))}
               </div>
-              <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
+              <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
+                <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
+                {drawer.buildStamp && !drawer.thirdParty && (
+                  <p className="pb-0.5 text-[10px] leading-none text-sky-300/80">
+                    {drawer.buildStamp}
+                  </p>
+                )}
+              </div>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -384,7 +479,7 @@ export default function App() {
                     (e.currentTarget as HTMLElement).style.transform = "scale(1)";
                   }}
                 >
-                  {drawer.openInNewTab ? "▶ Open game" : "▶ Play here"}
+                  {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
                 </button>
                 {drawer.thirdParty && !drawer.openInNewTab && (
                   <button
@@ -424,43 +519,52 @@ export default function App() {
             </div>
           </div>
 
-          {/* Row 2: description */}
-          <div className="flex-1 overflow-y-auto p-6">
-            {renderDescription(drawer.description)}
+          <div className="lg:flex-1 lg:overflow-y-auto">
+            {drawer.screenshots.length > 0 && (
+              <ScreenshotCarousel screenshots={drawer.screenshots} name={drawer.name} />
+            )}
+
+            {/* Row 2: description */}
+            <div className="shrink-0 p-6">
+              {renderDescription(drawer.description)}
+            </div>
           </div>
-        </div>
+          </div>
+        </>
       )}
 
-      <div className="shell-social-launchers">
-        <button
-          type="button"
-          onClick={handleShare}
-          className={`shell-social-launcher arcade-button ${showShareDrawer ? "is-active" : ""}`}
-          aria-expanded={showShareDrawer}
-          aria-controls="shell-social-share-drawer"
-          aria-label="Open share panel"
-        >
-          <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
-            <circle cx="18" cy="5.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
-            <circle cx="6" cy="12" r="2.25" stroke="currentColor" strokeWidth="1.9" />
-            <circle cx="18" cy="18.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
-            <path d="M8.1 10.95 15.9 6.55" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-            <path d="M8.1 13.05 15.9 17.45" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          onClick={toggleCommentsDrawer}
-          className={`shell-social-launcher arcade-button ${showCommentsDrawer ? "is-active" : ""}`}
-          aria-expanded={showCommentsDrawer}
-          aria-controls="shell-social-comments-drawer"
-          aria-label="Open comments panel"
-        >
-          <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
-            <path d="M6 6.5h12a2.5 2.5 0 0 1 2.5 2.5v6a2.5 2.5 0 0 1-2.5 2.5H10l-4 3v-3H6A2.5 2.5 0 0 1 3.5 15V9A2.5 2.5 0 0 1 6 6.5Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      </div>
+      {!drawer && (
+        <div className="shell-social-launchers">
+          <button
+            type="button"
+            onClick={handleShare}
+            className={`shell-social-launcher arcade-button ${showShareDrawer ? "is-active" : ""}`}
+            aria-expanded={showShareDrawer}
+            aria-controls="shell-social-share-drawer"
+            aria-label="Open share panel"
+          >
+            <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
+              <circle cx="18" cy="5.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
+              <circle cx="6" cy="12" r="2.25" stroke="currentColor" strokeWidth="1.9" />
+              <circle cx="18" cy="18.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
+              <path d="M8.1 10.95 15.9 6.55" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+              <path d="M8.1 13.05 15.9 17.45" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={toggleCommentsDrawer}
+            className={`shell-social-launcher arcade-button ${showCommentsDrawer ? "is-active" : ""}`}
+            aria-expanded={showCommentsDrawer}
+            aria-controls="shell-social-comments-drawer"
+            aria-label="Open comments panel"
+          >
+            <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
+              <path d="M6 6.5h12a2.5 2.5 0 0 1 2.5 2.5v6a2.5 2.5 0 0 1-2.5 2.5H10l-4 3v-3H6A2.5 2.5 0 0 1 3.5 15V9A2.5 2.5 0 0 1 6 6.5Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {(showShareDrawer || showCommentsDrawer) && (
         <div className="shell-social-backdrop" onClick={closeSocialDrawers} />

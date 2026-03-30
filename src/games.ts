@@ -8,6 +8,7 @@ export interface GameManifest {
   id?: string;
   name?: string;
   icon?: string;
+  screenshots?: string[];
   tags?: string[];
   subjects?: string[];
   skills?: string[];
@@ -31,6 +32,8 @@ export interface Game {
   id: string;
   name: string;
   url: string;
+  screenshots: string[];
+  buildStamp?: string;
   tags: string[];
   subjects: string[];
   skills: string[];
@@ -68,24 +71,44 @@ export function normalizeGame(
   raw: GameManifest & {
     url: string;
     imageUrl?: string;
+    screenshots?: string[];
     thirdParty?: boolean;
     openInNewTab?: boolean;
   }
 ): Game {
   const id = raw.id?.trim() || slugFromUrl(raw.url);
   const name = raw.name?.trim() || "Game";
+  const description = raw.description?.trim() || "";
+  const buildMatch = description.match(/^Build:\s*(.+)$/m);
+  const buildStamp = buildMatch?.[1]?.trim();
+  const cleanedDescription = description
+    .replace(/^Build:\s*.+\n*/m, "")
+    .trim();
   return {
     id,
     name,
     url: raw.url.trim(),
+    screenshots: Array.isArray(raw.screenshots) ? raw.screenshots.map(String).filter(Boolean) : [],
+    buildStamp,
     tags: Array.isArray(raw.tags) ? raw.tags.map(String) : [],
     subjects: Array.isArray(raw.subjects) ? raw.subjects.map(String) : ["maths"],
     skills: Array.isArray(raw.skills) ? raw.skills.map(String) : [],
-    description: raw.description?.trim() || "",
+    description: cleanedDescription,
     imageUrl: raw.imageUrl,
     thirdParty: Boolean(raw.thirdParty),
     openInNewTab: Boolean(raw.openInNewTab),
   };
+}
+
+function resolveAssetUrls(paths: string[] | undefined, gameUrl: string): string[] {
+  if (!Array.isArray(paths)) return [];
+  return paths
+    .map((path) => String(path).trim())
+    .filter(Boolean)
+    .map((path) => {
+      if (/^https?:\/\//.test(path)) return path;
+      return `${base(gameUrl)}${path.replace(/^\//, "")}`;
+    });
 }
 
 export async function resolveGameEntry(entry: GameListEntry): Promise<Game | null> {
@@ -97,6 +120,7 @@ export async function resolveGameEntry(entry: GameListEntry): Promise<Game | nul
       return normalizeGame({
         ...m,
         url: entry,
+        screenshots: resolveAssetUrls(m.screenshots, entry),
         thirdParty: Boolean(m.thirdParty),
         openInNewTab: false,
       });
@@ -111,6 +135,7 @@ export async function resolveGameEntry(entry: GameListEntry): Promise<Game | nul
     ...entry.manifest,
     url: playUrl,
     imageUrl: imageUrl || undefined,
+    screenshots: resolveAssetUrls(entry.manifest.screenshots, playUrl),
     thirdParty: true,
     openInNewTab: Boolean(entry.openInNewTab),
   });
