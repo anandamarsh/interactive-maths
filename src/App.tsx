@@ -188,6 +188,7 @@ export default function App() {
   }, []);
 
   const openDrawer = (g: Game) => {
+    closeSocialDrawers();
     setDrawer(g);
     setTimeout(() => setDrawerOpen(true), 10);
   };
@@ -249,6 +250,7 @@ export default function App() {
   });
 
   function startPlay(g: Game) {
+    closeSocialDrawers();
     if (g.openInNewTab) {
       window.open(g.url, "_blank", "noopener,noreferrer");
       return;
@@ -284,7 +286,7 @@ export default function App() {
     <div className="min-h-[100lvh] px-6 py-10">
       <div className="max-w-5xl mx-auto w-full">
         <header className="flex flex-col items-center text-center mb-10">
-          <p className="text-xs font-bold tracking-[0.25em] uppercase text-sky-400 mb-2">
+          <p className="text-[1.125rem] font-bold tracking-[0.25em] uppercase text-sky-400 mb-1">
             Interactive Maths
           </p>
 
@@ -292,7 +294,7 @@ export default function App() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by topic or skill…"
-            className="w-full max-w-md rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none text-left mt-6"
+            className="w-full max-w-md rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 outline-none text-left mt-3"
             style={{ background: "#0f172a", border: "1px solid #334155" }}
             onFocus={(e) => {
               e.currentTarget.style.borderColor = "#0ea5e9";
@@ -527,38 +529,36 @@ export default function App() {
         </>
       )}
 
-      {!drawer && (
-        <div className="shell-social-launchers">
-          <button
-            type="button"
-            onClick={handleShare}
-            className={`shell-social-launcher arcade-button ${showShareDrawer ? "is-active" : ""}`}
-            aria-expanded={showShareDrawer}
-            aria-controls="shell-social-share-drawer"
-            aria-label="Open share panel"
-          >
-            <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
-              <circle cx="18" cy="5.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
-              <circle cx="6" cy="12" r="2.25" stroke="currentColor" strokeWidth="1.9" />
-              <circle cx="18" cy="18.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
-              <path d="M8.1 10.95 15.9 6.55" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-              <path d="M8.1 13.05 15.9 17.45" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={toggleCommentsDrawer}
-            className={`shell-social-launcher arcade-button ${showCommentsDrawer ? "is-active" : ""}`}
-            aria-expanded={showCommentsDrawer}
-            aria-controls="shell-social-comments-drawer"
-            aria-label="Open comments panel"
-          >
-            <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
-              <path d="M6 6.5h12a2.5 2.5 0 0 1 2.5 2.5v6a2.5 2.5 0 0 1-2.5 2.5H10l-4 3v-3H6A2.5 2.5 0 0 1 3.5 15V9A2.5 2.5 0 0 1 6 6.5Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
-      )}
+      <div className="shell-social-launchers">
+        <button
+          type="button"
+          onClick={handleShare}
+          className={`shell-social-launcher arcade-button ${showShareDrawer ? "is-active" : ""}`}
+          aria-expanded={showShareDrawer}
+          aria-controls="shell-social-share-drawer"
+          aria-label="Open share panel"
+        >
+          <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
+            <circle cx="18" cy="5.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
+            <circle cx="6" cy="12" r="2.25" stroke="currentColor" strokeWidth="1.9" />
+            <circle cx="18" cy="18.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
+            <path d="M8.1 10.95 15.9 6.55" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+            <path d="M8.1 13.05 15.9 17.45" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={toggleCommentsDrawer}
+          className={`shell-social-launcher arcade-button ${showCommentsDrawer ? "is-active" : ""}`}
+          aria-expanded={showCommentsDrawer}
+          aria-controls="shell-social-comments-drawer"
+          aria-label="Open comments panel"
+        >
+          <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
+            <path d="M6 6.5h12a2.5 2.5 0 0 1 2.5 2.5v6a2.5 2.5 0 0 1-2.5 2.5H10l-4 3v-3H6A2.5 2.5 0 0 1 3.5 15V9A2.5 2.5 0 0 1 6 6.5Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
 
       {(showShareDrawer || showCommentsDrawer) && (
         <div className="shell-social-backdrop" onClick={closeSocialDrawers} />
@@ -569,7 +569,7 @@ export default function App() {
         className="shell-social-drawer"
         aria-hidden={!showShareDrawer}
         style={{
-          left: "1rem",
+          right: "1rem",
           bottom: "1rem",
           transform: showShareDrawer ? "translateY(0)" : "translateY(calc(100% + 1rem))",
           background: "rgba(2,6,23,0.97)",

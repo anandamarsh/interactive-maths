@@ -46,9 +46,9 @@ body {
 
 .shell-social-launchers {
   position: fixed;
-  top: 1rem;
+  bottom: 1rem;
   right: 1rem;
-  z-index: 61;
+  z-index: 35;
   display: flex;
   gap: 0.55rem;
 }
@@ -61,6 +61,7 @@ body {
   height: 2.7rem;
   color: white;
   padding: 0.5rem;
+  box-shadow: 0 10px 22px rgba(2, 6, 23, 0.45), 0 2px 8px rgba(2, 6, 23, 0.35);
   transition: transform 180ms ease, filter 180ms ease;
 }
 
