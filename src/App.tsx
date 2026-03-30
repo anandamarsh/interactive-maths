@@ -336,11 +336,6 @@ export default function App() {
                 <GameIcon game={g} className="w-32 h-32 object-contain" />
                 <div className="px-1">
                   <div className="text-white font-bold text-sm leading-tight">{g.name}</div>
-                  {g.buildStamp && !g.thirdParty && (
-                    <div className="mt-1 text-[10px] leading-none text-sky-300/80">
-                      {g.buildStamp}
-                    </div>
-                  )}
                 </div>
                 <div className="flex flex-wrap justify-center gap-1">
                   {g.tags.slice(0, 2).map((t, i) => (
