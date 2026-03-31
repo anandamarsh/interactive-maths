@@ -149,9 +149,176 @@ body {
   text-transform: uppercase;
 }
 
+.shell-social-comments-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.shell-social-comments-new {
+  border: 1px solid rgba(250,204,21,0.55);
+  border-radius: 999px;
+  background: rgba(250,204,21,0.12);
+  color: #fde047;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0.45rem 0.8rem;
+  line-height: 1;
+}
+
+.shell-social-drawer-close-comments {
+  color: #fde047;
+}
+
 .shell-social-comments-shell {
   flex: 1;
   min-height: 0;
+}
+
+.app-settings-button {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 40;
+  width: 2.7rem;
+  height: 2.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  padding: 0.5rem;
+  box-shadow: 0 10px 22px rgba(2, 6, 23, 0.45), 0 2px 8px rgba(2, 6, 23, 0.35);
+}
+
+.app-settings-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transform: scale(1.12);
+}
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(2, 6, 23, 0.72);
+}
+
+.settings-card {
+  width: min(100%, 420px);
+  padding: 1rem;
+  border: 1px solid rgba(250, 204, 21, 0.22);
+  border-radius: 20px;
+  background: #171717;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.settings-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.settings-kicker,
+.settings-header h2,
+.settings-copy,
+.settings-note {
+  margin: 0;
+}
+
+.settings-kicker {
+  color: #fde047;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.settings-header h2 {
+  margin-top: 0.35rem;
+  color: #f8fafc;
+  font-size: 1.2rem;
+}
+
+.settings-close {
+  border: 0;
+  background: transparent;
+  color: #fde047;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.settings-copy,
+.settings-note,
+.settings-label {
+  color: #cbd5e1;
+}
+
+.settings-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: #0f172a;
+}
+
+.settings-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.settings-switch input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.settings-switch-track {
+  width: 3.4rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: #334155;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem;
+  transition: background 0.15s ease;
+}
+
+.settings-switch-thumb {
+  width: 1.45rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  background: white;
+  transition: transform 0.15s ease;
+}
+
+.settings-switch.is-on .settings-switch-track {
+  background: #fde047;
+}
+
+.settings-switch.is-on .settings-switch-thumb {
+  background: #0f172a;
+  transform: translateX(1.35rem);
+}
+
+.settings-note {
+  margin-top: 0.9rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
 }
 
 .social-share-buttons {

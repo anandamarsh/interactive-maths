@@ -104,6 +104,13 @@ function shuffle<T>(items: T[]): T[] {
   return next;
 }
 
+const notificationPreferenceKey = "interactive-maths:comment-notifications";
+
+function readNotificationPreference() {
+  if (typeof window === "undefined") return "off";
+  return window.localStorage.getItem(notificationPreferenceKey) ?? "off";
+}
+
 function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name: string }) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const ordered = useMemo(() => shuffle(screenshots), [screenshots]);
@@ -295,6 +302,10 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showShareDrawer, setShowShareDrawer] = useState(false);
   const [showCommentsDrawer, setShowCommentsDrawer] = useState(false);
+  const [commentComposeRequest, setCommentComposeRequest] = useState(0);
+  const [commentReloadRequest, setCommentReloadRequest] = useState(0);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [notificationPreference, setNotificationPreference] = useState(readNotificationPreference);
   const [isMobileLandscape, setIsMobileLandscape] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 1024 && window.innerWidth > window.innerHeight;
@@ -324,6 +335,10 @@ export default function App() {
     return () => window.removeEventListener("resize", syncViewportMode);
   }, []);
 
+  useEffect(() => {
+    window.localStorage.setItem(notificationPreferenceKey, notificationPreference);
+  }, [notificationPreference]);
+
   const openDrawer = (g: Game) => {
     closeSocialDrawers();
     setDrawer(g);
@@ -337,7 +352,32 @@ export default function App() {
 
   function closeSocialDrawers() {
     setShowShareDrawer(false);
+    if (showCommentsDrawer) {
+      setShowCommentsDrawer(false);
+      setCommentReloadRequest((value) => value + 1);
+      return;
+    }
     setShowCommentsDrawer(false);
+  }
+
+  function closeCommentsDrawer() {
+    setShowCommentsDrawer(false);
+    setCommentReloadRequest((value) => value + 1);
+  }
+
+  async function enableNotifications() {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      setNotificationPreference("on");
+    }
+  }
+
+  function disableNotifications() {
+    setNotificationPreference("off");
   }
 
   async function handleShare() {
@@ -421,6 +461,16 @@ export default function App() {
 
   return (
     <div className="min-h-[100lvh] px-6 py-10">
+      <button
+        type="button"
+        onClick={() => setShowSettingsModal(true)}
+        title="Settings"
+        className="arcade-button app-settings-button"
+      >
+        <svg viewBox="0 0 24 24" className="app-settings-icon" fill="currentColor" aria-hidden="true">
+          <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.028 7.028 0 0 0-1.63-.94l-.36-2.54A.488.488 0 0 0 13.9 2h-3.8c-.24 0-.44.17-.48.41l-.36 2.54c-.59.24-1.13.55-1.63.94l-2.39-.96a.493.493 0 0 0-.6.22L2.72 8.47a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.07.64-.07.95s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.22.39.31.6.22l2.39-.96c.5.39 1.05.71 1.63.94l.36 2.54c.04.24.24.41.48.41h3.8c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.55 1.63-.94l2.39.96c.22.09.48 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+        </svg>
+      </button>
       <div className="max-w-5xl mx-auto w-full">
         <header className="flex flex-col items-center text-center mb-10">
           <p className="text-[1.125rem] font-bold tracking-[0.25em] uppercase text-sky-400 mb-1">
@@ -797,6 +847,49 @@ export default function App() {
         <div className="shell-social-backdrop" onClick={closeSocialDrawers} />
       )}
 
+      {showSettingsModal && (
+        <div className="settings-overlay" onClick={() => setShowSettingsModal(false)}>
+          <div className="settings-card" onClick={(event) => event.stopPropagation()}>
+            <div className="settings-header">
+              <p className="settings-kicker">Settings</p>
+              <button
+                type="button"
+                className="settings-close"
+                onClick={() => setShowSettingsModal(false)}
+                aria-label="Close settings"
+              >
+                ✕
+              </button>
+            </div>
+
+            <label className="settings-switch-row">
+              <span
+                className="settings-label"
+                style={{ color: notificationPreference === "on" ? "#fde047" : undefined }}
+              >
+                Notifications
+              </span>
+              <span className={`settings-switch ${notificationPreference === "on" ? "is-on" : ""}`}>
+                <input
+                  type="checkbox"
+                  checked={notificationPreference === "on"}
+                  onChange={(event) => {
+                    if (event.currentTarget.checked) {
+                      void enableNotifications();
+                    } else {
+                      disableNotifications();
+                    }
+                  }}
+                />
+                <span className="settings-switch-track">
+                  <span className="settings-switch-thumb" />
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+      )}
+
       <div
         id="shell-social-share-drawer"
         className="shell-social-drawer"
@@ -832,10 +925,19 @@ export default function App() {
       >
         <div className="shell-social-comments-header">
           <div className="shell-social-comments-title">Comments</div>
-          <button type="button" onClick={() => setShowCommentsDrawer(false)} className="shell-social-drawer-close" aria-label="Close comments drawer">✕</button>
+          <div className="shell-social-comments-actions">
+            <button
+              type="button"
+              onClick={() => setCommentComposeRequest((value) => value + 1)}
+              className="shell-social-comments-new"
+            >
+              New comment
+            </button>
+            <button type="button" onClick={closeCommentsDrawer} className="shell-social-drawer-close shell-social-drawer-close-comments" aria-label="Close comments drawer">✕</button>
+          </div>
         </div>
         <div className="shell-social-comments-shell">
-          <SocialComments />
+          <SocialComments composeRequest={commentComposeRequest} reloadRequest={commentReloadRequest} />
         </div>
       </div>
     </div>

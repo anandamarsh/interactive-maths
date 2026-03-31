@@ -12,23 +12,7 @@ import {
 
 const SHARE_TITLE = "Check out this maths game on Interactive Maths!";
 const SHARE_URL = "https://interactive-maths.vercel.app/";
-const CUSDIS_HOST = "https://cusdis.com";
-const CUSDIS_APP_ID = "b7cf3bec-b283-485f-9db9-8e7f3cfac3c2";
-const COMMENTS_PAGE_ID = "interactive-maths";
-const COMMENTS_TITLE = "Interactive Maths";
-
-function ensureCusdisLoaded() {
-  const existing = document.querySelector('script[data-cusdis-script="true"]');
-  if (existing) return existing;
-
-  const script = document.createElement("script");
-  script.async = true;
-  script.defer = true;
-  script.src = `${CUSDIS_HOST}/js/cusdis.es.js`;
-  script.dataset.cusdisScript = "true";
-  document.body.appendChild(script);
-  return script;
-}
+const LOCAL_DISCUSSIT_URL = (import.meta.env.VITE_DISCUSSIT_URL ?? "http://localhost:5001").replace(/\/$/, "");
 
 export function SocialShare() {
   return (
@@ -61,52 +45,44 @@ export function SocialShare() {
   );
 }
 
-export function SocialComments() {
-  const hostRef = useRef<HTMLDivElement | null>(null);
+export function SocialComments({ composeRequest, reloadRequest }: { composeRequest: number; reloadRequest: number }) {
+  const pageUrl = typeof window !== "undefined" ? window.location.href : SHARE_URL;
+  const iframeUrl = `${LOCAL_DISCUSSIT_URL}/?url=${encodeURIComponent(pageUrl)}&theme=dark`;
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
-    const script = ensureCusdisLoaded();
-
-    const stretchIframe = () => {
-      const iframe = hostRef.current?.querySelector("iframe");
-      if (iframe instanceof HTMLIFrameElement) {
-        iframe.style.height = "100%";
-        iframe.style.minHeight = "100%";
-      }
-    };
-
-    const renderCusdis = () => {
-      const api = (window as typeof window & {
-        CUSDIS?: { renderTo?: (target: HTMLElement) => void };
-      }).CUSDIS;
-      if (api?.renderTo && hostRef.current) {
-        api.renderTo(hostRef.current);
-        requestAnimationFrame(stretchIframe);
-        window.setTimeout(stretchIframe, 150);
-      }
-    };
-
-    if ((window as typeof window & { CUSDIS?: unknown }).CUSDIS) {
-      renderCusdis();
+    if (!composeRequest) {
       return;
     }
 
-    script?.addEventListener("load", renderCusdis, { once: true });
-    return () => script?.removeEventListener("load", renderCusdis);
-  }, []);
+    iframeRef.current?.contentWindow?.postMessage(
+      { type: "discussit:open-composer" },
+      LOCAL_DISCUSSIT_URL,
+    );
+  }, [composeRequest]);
+
+  useEffect(() => {
+    if (!reloadRequest || !iframeRef.current) {
+      return;
+    }
+
+    iframeRef.current.src = iframeUrl;
+  }, [iframeUrl, reloadRequest]);
 
   return (
     <div style={{ padding: "1rem 1rem 1.25rem", height: "100%", boxSizing: "border-box" }}>
-      <div
-        id="cusdis_thread"
-        ref={hostRef}
-        data-host={CUSDIS_HOST}
-        data-app-id={CUSDIS_APP_ID}
-        data-page-id={COMMENTS_PAGE_ID}
-        data-page-url={SHARE_URL}
-        data-page-title={COMMENTS_TITLE}
-        data-theme="dark"
-        style={{ height: "100%", minHeight: "100%" }}
+      <iframe
+        ref={iframeRef}
+        src={iframeUrl}
+        title="DiscussIt comments"
+        style={{
+          width: "100%",
+          height: "100%",
+          minHeight: "100%",
+          border: 0,
+          borderRadius: "18px",
+          background: "transparent",
+        }}
       />
     </div>
   );
