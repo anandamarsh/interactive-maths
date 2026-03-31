@@ -258,8 +258,15 @@ body {
 
 .settings-copy,
 .settings-note,
-.settings-label {
+.settings-label,
+.settings-label-group {
   color: #cbd5e1;
+}
+
+.settings-label-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
 }
 
 .settings-switch-row {
@@ -272,6 +279,23 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   background: #0f172a;
+}
+
+.settings-push-button {
+  border: 1px solid rgba(250, 204, 21, 0.45);
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.12);
+  color: #fde047;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.settings-push-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .settings-switch {

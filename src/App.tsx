@@ -3,6 +3,7 @@ import { SocialComments, SocialShare } from "./components/Social";
 import { GameIcon } from "./components/GameIcon";
 import type { Game, GameListEntry } from "./games";
 import { loadGamesList } from "./games";
+import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
 
 /** Avoid mixed-content when the shell is HTTPS */
 function iframeSrc(url: string): string {
@@ -306,6 +307,8 @@ export default function App() {
   const [commentReloadRequest, setCommentReloadRequest] = useState(0);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [notificationPreference, setNotificationPreference] = useState(readNotificationPreference);
+  const [pushState, setPushState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [pushError, setPushError] = useState("");
   const [isMobileLandscape, setIsMobileLandscape] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 1024 && window.innerWidth > window.innerHeight;
@@ -372,12 +375,33 @@ export default function App() {
 
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
+      try {
+        await ensurePushSubscription();
+      } catch {
+        // The test button will surface the error explicitly if subscription setup still fails.
+      }
       setNotificationPreference("on");
     }
   }
 
   function disableNotifications() {
     setNotificationPreference("off");
+    setPushState("idle");
+    setPushError("");
+  }
+
+  async function handleTestPush() {
+    setPushState("sending");
+    setPushError("");
+
+    try {
+      await sendTestPush();
+      setPushState("sent");
+      window.setTimeout(() => setPushState("idle"), 1800);
+    } catch (error) {
+      setPushState("error");
+      setPushError(error instanceof Error ? error.message : "Push test failed.");
+    }
   }
 
   async function handleShare() {
@@ -863,11 +887,26 @@ export default function App() {
             </div>
 
             <label className="settings-switch-row">
-              <span
-                className="settings-label"
-                style={{ color: notificationPreference === "on" ? "#fde047" : undefined }}
-              >
-                Notifications
+              <span className="settings-label-group">
+                <span
+                  className="settings-label"
+                  style={{ color: notificationPreference === "on" ? "#fde047" : undefined }}
+                >
+                  Notifications
+                </span>
+                {notificationPreference === "on" && (
+                  <button
+                    type="button"
+                    className="settings-push-button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      void handleTestPush();
+                    }}
+                    disabled={pushState === "sending"}
+                  >
+                    {pushState === "sending" ? "Sending..." : pushState === "sent" ? "Sent" : "Push"}
+                  </button>
+                )}
               </span>
               <span className={`settings-switch ${notificationPreference === "on" ? "is-on" : ""}`}>
                 <input
@@ -886,6 +925,12 @@ export default function App() {
                 </span>
               </span>
             </label>
+
+            {pushState === "error" && pushError && (
+              <p className="settings-note" style={{ color: "#fda4af" }}>
+                {pushError}
+              </p>
+            )}
           </div>
         </div>
       )}

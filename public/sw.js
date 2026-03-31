@@ -1,4 +1,4 @@
-const CACHE_VERSION = "interactive-maths-v1";
+const CACHE_VERSION = "interactive-maths-v2";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const APP_SHELL_ASSETS = [
@@ -79,4 +79,54 @@ self.addEventListener("fetch", (event) => {
       }),
     );
   }
+});
+
+self.addEventListener("push", (event) => {
+  if (!event.data) {
+    return;
+  }
+
+  let payload = {};
+  try {
+    payload = event.data.json();
+  } catch {
+    payload = { body: event.data.text() };
+  }
+
+  const title = payload.title || "Interactive Maths";
+  const body = payload.body || "You have a new notification.";
+  const url = payload.url || "/";
+  const tag = payload.tag || "interactive-maths-push";
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      tag,
+      data: { url },
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const targetUrl = event.notification.data?.url || "/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+
+      return undefined;
+    }),
+  );
 });
