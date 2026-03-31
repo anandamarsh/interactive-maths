@@ -303,6 +303,7 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showShareDrawer, setShowShareDrawer] = useState(false);
   const [showCommentsDrawer, setShowCommentsDrawer] = useState(false);
+  const [embeddedOverlayActive, setEmbeddedOverlayActive] = useState(false);
   const [commentComposeRequest, setCommentComposeRequest] = useState(0);
   const [commentReloadRequest, setCommentReloadRequest] = useState(0);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -452,12 +453,26 @@ export default function App() {
 
   function startPlay(g: Game) {
     closeSocialDrawers();
+    setEmbeddedOverlayActive(false);
     if (g.openInNewTab) {
       window.open(g.url, "_blank", "noopener,noreferrer");
       return;
     }
     setActive(g);
   }
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (!event.data || event.data.type !== "interactive-maths:overlay-active") {
+        return;
+      }
+
+      setEmbeddedOverlayActive(Boolean(event.data.active));
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   if (active) {
     return (
@@ -470,15 +485,17 @@ export default function App() {
           title={active.name}
         />
         {active.thirdParty && <PartnerIframeChrome url={active.url} />}
-        <button
-          onClick={() => setActive(null)}
-          title="Home"
-          className="arcade-button absolute top-2 left-2 z-[40] w-10 h-10 p-2"
-        >
-          <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
-            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-          </svg>
-        </button>
+        {!embeddedOverlayActive ? (
+          <button
+            onClick={() => setActive(null)}
+            title="Home"
+            className="arcade-button absolute top-2 left-2 z-[40] w-10 h-10 p-2"
+          >
+            <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+          </button>
+        ) : null}
       </div>
     );
   }
