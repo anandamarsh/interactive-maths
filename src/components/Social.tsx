@@ -12,7 +12,10 @@ import {
 
 const SHARE_TITLE = "Check out this maths game on Interactive Maths!";
 const SHARE_URL = "https://interactive-maths.vercel.app/";
-const LOCAL_DISCUSSIT_URL = (import.meta.env.VITE_DISCUSSIT_URL ?? "http://localhost:5001").replace(/\/$/, "");
+const DEFAULT_DISCUSSIT_URL = import.meta.env.PROD
+  ? "https://discussit-widget.vercel.app"
+  : "http://localhost:5001";
+const LOCAL_DISCUSSIT_URL = (import.meta.env.VITE_DISCUSSIT_URL ?? DEFAULT_DISCUSSIT_URL).replace(/\/$/, "");
 
 export function SocialShare() {
   return (
