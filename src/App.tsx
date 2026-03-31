@@ -729,7 +729,7 @@ export default function App() {
           ) : (
             <div className="flex gap-5 p-4 pb-3 pt-10 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
               <GameIcon game={drawer} className="w-40 h-40 object-contain shrink-0" alt="" />
-              <div className="flex flex-col gap-2 justify-center min-w-0">
+              <div className="flex flex-col gap-4 justify-center min-w-0">
                 {drawer.thirdParty && (
                   <span
                     className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
