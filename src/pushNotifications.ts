@@ -62,22 +62,14 @@ function serializePushSubscription(subscription: PushSubscription): SerializedPu
 
 async function savePushSubscription(subscription: PushSubscription) {
   const payload = serializePushSubscription(subscription);
-  const response = await fetch(`${supabaseUrl}/rest/v1/push_subscriptions?on_conflict=endpoint`, {
+  const response = await fetch(`${supabaseUrl}/functions/v1/save-push-subscription`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       apikey: supabaseAnonKey,
       Authorization: `Bearer ${supabaseAnonKey}`,
-      Prefer: "resolution=merge-duplicates,return=minimal",
     },
-    body: JSON.stringify([
-      {
-        endpoint: payload.endpoint,
-        expiration_time: payload.expirationTime ?? null,
-        keys_auth: payload.keys.auth,
-        keys_p256dh: payload.keys.p256dh,
-      },
-    ]),
+    body: JSON.stringify({ subscription: payload }),
   });
 
   if (!response.ok) {
