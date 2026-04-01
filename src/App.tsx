@@ -371,18 +371,31 @@ export default function App() {
 
   async function enableNotifications() {
     if (typeof window === "undefined" || !("Notification" in window)) {
+      setPushState("error");
+      setPushError("Notifications are not available in this browser.");
       return;
     }
+
+    setPushState("idle");
+    setPushError("");
 
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       try {
         await ensurePushSubscription();
-      } catch {
-        // The test button will surface the error explicitly if subscription setup still fails.
+        setNotificationPreference("on");
+        return;
+      } catch (error) {
+        setNotificationPreference("off");
+        setPushState("error");
+        setPushError(error instanceof Error ? error.message : "Failed to enable notifications.");
+        return;
       }
-      setNotificationPreference("on");
     }
+
+    setNotificationPreference("off");
+    setPushState("error");
+    setPushError("Notifications were not allowed.");
   }
 
   function disableNotifications() {

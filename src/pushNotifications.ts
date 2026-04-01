@@ -1,6 +1,8 @@
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const vapidPublicKey = import.meta.env.VITE_PUSH_VAPID_PUBLIC_KEY;
+const envVapidPublicKey = import.meta.env.VITE_PUSH_VAPID_PUBLIC_KEY;
+
+let vapidPublicKeyPromise: Promise<string> | null = null;
 
 type SerializedPushSubscription = {
   endpoint: string;
@@ -12,9 +14,44 @@ type SerializedPushSubscription = {
 };
 
 function requirePushConfig() {
-  if (!supabaseUrl || !supabaseAnonKey || !vapidPublicKey) {
+  if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Push notifications are not configured for this app.");
   }
+}
+
+async function loadVapidPublicKey() {
+  if (envVapidPublicKey) {
+    return envVapidPublicKey;
+  }
+
+  if (!vapidPublicKeyPromise) {
+    vapidPublicKeyPromise = fetch(`${supabaseUrl}/functions/v1/push-config`, {
+      method: "GET",
+      headers: {
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${supabaseAnonKey}`,
+      },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(typeof data.error === "string" ? data.error : "Failed to load push configuration.");
+        }
+
+        const data = await response.json().catch(() => ({}));
+        if (typeof data.vapidPublicKey !== "string" || !data.vapidPublicKey) {
+          throw new Error("Push configuration is incomplete.");
+        }
+
+        return data.vapidPublicKey;
+      })
+      .catch((error) => {
+        vapidPublicKeyPromise = null;
+        throw error;
+      });
+  }
+
+  return vapidPublicKeyPromise;
 }
 
 function base64UrlToUint8Array(input: string) {
@@ -35,12 +72,14 @@ async function getRegistration() {
     throw new Error("This browser does not support service workers.");
   }
 
-  const existing = await navigator.serviceWorker.getRegistration();
+  const existing = await navigator.serviceWorker.getRegistration("/sw.js");
   if (existing) {
+    await navigator.serviceWorker.ready;
     return existing;
   }
 
-  return navigator.serviceWorker.register("/sw.js");
+  await navigator.serviceWorker.register("/sw.js");
+  return navigator.serviceWorker.ready;
 }
 
 function serializePushSubscription(subscription: PushSubscription): SerializedPushSubscription {
@@ -86,6 +125,7 @@ export async function ensurePushSubscription() {
     throw new Error("This browser does not support push notifications.");
   }
 
+  const vapidPublicKey = await loadVapidPublicKey();
   const registration = await getRegistration();
   const existing = await registration.pushManager.getSubscription();
   if (existing) {
@@ -102,6 +142,17 @@ export async function ensurePushSubscription() {
   return subscription;
 }
 
+async function renewPushSubscription() {
+  const registration = await getRegistration();
+  const existing = await registration.pushManager.getSubscription();
+
+  if (existing) {
+    await existing.unsubscribe().catch(() => {});
+  }
+
+  return ensurePushSubscription();
+}
+
 export async function sendTestPush() {
   requirePushConfig();
 
@@ -113,8 +164,8 @@ export async function sendTestPush() {
     throw new Error("Enable notifications first.");
   }
 
-  const subscription = await ensurePushSubscription();
-  const response = await fetch(`${supabaseUrl}/functions/v1/test-push`, {
+  const send = async (subscription: PushSubscription) =>
+    fetch(`${supabaseUrl}/functions/v1/test-push`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -129,8 +180,21 @@ export async function sendTestPush() {
     }),
   });
 
+  let subscription = await ensurePushSubscription();
+  let response = await send(subscription);
+
+  if (!response.ok && response.status !== 400) {
+    subscription = await renewPushSubscription();
+    response = await send(subscription);
+  }
+
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(typeof data.error === "string" ? data.error : "Failed to send test push.");
+    const details = typeof data.details === "string" ? data.details : "";
+    throw new Error(
+      typeof data.error === "string"
+        ? (details ? `${data.error}: ${details}` : data.error)
+        : "Failed to send test push.",
+    );
   }
 }
