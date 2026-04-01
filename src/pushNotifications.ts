@@ -29,7 +29,6 @@ async function loadVapidPublicKey() {
       method: "GET",
       headers: {
         apikey: supabaseAnonKey,
-        Authorization: `Bearer ${supabaseAnonKey}`,
       },
     })
       .then(async (response) => {
@@ -106,7 +105,6 @@ async function savePushSubscription(subscription: PushSubscription) {
     headers: {
       "Content-Type": "application/json",
       apikey: supabaseAnonKey,
-      Authorization: `Bearer ${supabaseAnonKey}`,
     },
     body: JSON.stringify({ subscription: payload }),
   });
@@ -170,7 +168,6 @@ export async function sendTestPush() {
     headers: {
       "Content-Type": "application/json",
       apikey: supabaseAnonKey,
-      Authorization: `Bearer ${supabaseAnonKey}`,
     },
     body: JSON.stringify({
       subscription: serializePushSubscription(subscription),
