@@ -916,7 +916,7 @@ export default function App() {
               </button>
             </div>
 
-            <label className="settings-switch-row">
+            <div className="settings-switch-row">
               <span className="settings-label-group">
                 <span
                   className="settings-label"
@@ -938,23 +938,26 @@ export default function App() {
                   </button>
                 )}
               </span>
-              <span className={`settings-switch ${notificationPreference === "on" ? "is-on" : ""}`}>
-                <input
-                  type="checkbox"
-                  checked={notificationPreference === "on"}
-                  onChange={(event) => {
-                    if (event.currentTarget.checked) {
-                      void enableNotifications();
-                    } else {
-                      disableNotifications();
-                    }
-                  }}
-                />
+              <button
+                type="button"
+                className={`settings-switch ${notificationPreference === "on" ? "is-on" : ""}`}
+                role="switch"
+                aria-checked={notificationPreference === "on"}
+                aria-label="Toggle notifications"
+                onClick={() => {
+                  if (notificationPreference === "on") {
+                    disableNotifications();
+                    return;
+                  }
+
+                  void enableNotifications();
+                }}
+              >
                 <span className="settings-switch-track">
                   <span className="settings-switch-thumb" />
                 </span>
-              </span>
-            </label>
+              </button>
+            </div>
 
             {pushState === "error" && pushError && (
               <p className="settings-note" style={{ color: "#fda4af" }}>
