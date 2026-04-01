@@ -117,7 +117,7 @@ body {
 
 .shell-social-comments-drawer {
   position: fixed;
-  inset-inline: 0;
+  left: 50%;
   bottom: 0;
   z-index: 90;
   display: flex;
@@ -127,6 +127,7 @@ body {
   background: #171717;
   border-top: 3px solid rgba(250,204,21,0.4);
   box-shadow: 0 -8px 32px rgba(0,0,0,0.6);
+  transform: translateX(-50%);
 }
 
 .shell-social-comments-header {
@@ -141,14 +142,6 @@ body {
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
-.shell-social-comments-title {
-  color: #fde047;
-  font-size: 1rem;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
 .shell-social-comments-actions {
   display: flex;
   align-items: center;
@@ -156,17 +149,18 @@ body {
 }
 
 .shell-social-comments-new {
-  border: 1px solid rgba(250,204,21,0.55);
+  border: 1px solid rgba(250,204,21,0.72);
   border-radius: 999px;
-  background: rgba(250,204,21,0.12);
-  color: #fde047;
-  font-size: 0.74rem;
+  background: #facc15;
+  color: #111111;
+  font-size: 0.76rem;
   font-weight: 900;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  padding: 0.45rem 0.8rem;
+  padding: 0.55rem 0.95rem;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .shell-social-drawer-close-comments {
@@ -176,6 +170,13 @@ body {
 .shell-social-comments-shell {
   flex: 1;
   min-height: 0;
+}
+
+@media (max-width: 1023px) {
+  .shell-social-comments-drawer {
+    left: 0;
+    transform: none;
+  }
 }
 
 .app-settings-button {

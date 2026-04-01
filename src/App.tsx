@@ -993,21 +993,22 @@ export default function App() {
         className="shell-social-comments-drawer"
         aria-hidden={!showCommentsDrawer}
         style={{
-          height: isMobileLandscape ? "100dvh" : "50vh",
-          maxHeight: isMobileLandscape ? "100dvh" : "50vh",
+          width: isMobileLandscape || isMobilePortrait ? "100vw" : "70vw",
+          height: isMobileLandscape || isMobilePortrait ? "100dvh" : "70vh",
+          maxWidth: isMobileLandscape || isMobilePortrait ? "100vw" : "70vw",
+          maxHeight: isMobileLandscape || isMobilePortrait ? "100dvh" : "70vh",
           transform: showCommentsDrawer ? "translateY(0)" : "translateY(100%)",
         }}
       >
         <div className="shell-social-comments-header">
-          <div className="shell-social-comments-title">Comments</div>
+          <button
+            type="button"
+            onClick={() => setCommentComposeRequest((value) => value + 1)}
+            className="shell-social-comments-new"
+          >
+            Add Comment
+          </button>
           <div className="shell-social-comments-actions">
-            <button
-              type="button"
-              onClick={() => setCommentComposeRequest((value) => value + 1)}
-              className="shell-social-comments-new"
-            >
-              New comment
-            </button>
             <button type="button" onClick={closeCommentsDrawer} className="shell-social-drawer-close shell-social-drawer-close-comments" aria-label="Close comments drawer">✕</button>
           </div>
         </div>

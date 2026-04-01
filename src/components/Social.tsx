@@ -73,7 +73,7 @@ export function SocialComments({ composeRequest, reloadRequest }: { composeReque
   }, [iframeUrl, reloadRequest]);
 
   return (
-    <div style={{ padding: "1rem 1rem 1.25rem", height: "100%", boxSizing: "border-box" }}>
+    <div style={{ padding: "0", height: "100%", boxSizing: "border-box" }}>
       <iframe
         ref={iframeRef}
         src={iframeUrl}
@@ -83,7 +83,7 @@ export function SocialComments({ composeRequest, reloadRequest }: { composeReque
           height: "100%",
           minHeight: "100%",
           border: 0,
-          borderRadius: "18px",
+          borderRadius: "0",
           background: "transparent",
         }}
       />
