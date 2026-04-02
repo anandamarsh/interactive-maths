@@ -13,6 +13,38 @@ function pushLog(step: string, details?: unknown) {
   console.log(`[interactive-maths push] ${step}`, details);
 }
 
+function describeWorker(worker: ServiceWorker | null | undefined) {
+  if (!worker) {
+    return null;
+  }
+
+  return {
+    scriptURL: worker.scriptURL,
+    state: worker.state,
+  };
+}
+
+async function describeSubscription(
+  subscription: PushSubscription | null,
+): Promise<null | {
+  endpoint: string;
+  expirationTime: number | null;
+  hasAuthKey: boolean;
+  hasP256dhKey: boolean;
+}> {
+  if (!subscription) {
+    return null;
+  }
+
+  const json = subscription.toJSON();
+  return {
+    endpoint: json.endpoint ?? "",
+    expirationTime: json.expirationTime ?? null,
+    hasAuthKey: Boolean(json.keys?.auth),
+    hasP256dhKey: Boolean(json.keys?.p256dh),
+  };
+}
+
 type SerializedPushSubscription = {
   endpoint: string;
   expirationTime?: number | null;
@@ -101,30 +133,22 @@ async function getRegistration() {
     throw new Error("This browser does not support service workers.");
   }
 
-  pushLog("registering service worker", { scope: "/" });
-  const registration = await navigator.serviceWorker.register("/sw.js", {
-    scope: "/",
-    updateViaCache: "none",
+  pushLog("service worker environment", {
+    controller: describeWorker(navigator.serviceWorker.controller),
   });
 
-  const waitForActivation = async () => {
-    if (registration.active) {
-      return registration;
-    }
+  const waitForWorkerActivation = (worker: ServiceWorker) =>
+    new Promise<void>((resolve, reject) => {
+      pushLog("waiting for service worker activation", { state: worker.state });
 
-    const worker = registration.installing ?? registration.waiting;
-    if (!worker) {
-      throw new Error("Push subscription requires an active service worker.");
-    }
-
-    pushLog("waiting for service worker activation", { state: worker.state });
-    await new Promise<void>((resolve, reject) => {
       const timeoutId = window.setTimeout(() => {
+        worker.removeEventListener("statechange", handleStateChange);
         reject(new Error("Service worker activation timed out."));
       }, 10000);
 
       const handleStateChange = () => {
         pushLog("service worker state changed", { state: worker.state });
+
         if (worker.state === "activated") {
           window.clearTimeout(timeoutId);
           worker.removeEventListener("statechange", handleStateChange);
@@ -142,16 +166,68 @@ async function getRegistration() {
       worker.addEventListener("statechange", handleStateChange);
       handleStateChange();
     });
-  };
 
-  await registration.update().catch((error) => {
-    pushLog("service worker update failed", error);
-  });
-  await waitForActivation();
+  let registration = await navigator.serviceWorker.getRegistration("/");
+  pushLog("looked up existing service worker registration", registration
+    ? {
+        scope: registration.scope,
+        active: describeWorker(registration.active),
+        installing: describeWorker(registration.installing),
+        waiting: describeWorker(registration.waiting),
+      }
+    : null);
+
+  if (!registration) {
+    pushLog("registering service worker", { scope: "/" });
+    registration = await navigator.serviceWorker.register("/sw.js", {
+      scope: "/",
+      updateViaCache: "none",
+    });
+    pushLog("service worker register returned", {
+      scope: registration.scope,
+      active: describeWorker(registration.active),
+      installing: describeWorker(registration.installing),
+      waiting: describeWorker(registration.waiting),
+    });
+  } else {
+    pushLog("reusing existing service worker registration", { scope: registration.scope });
+  }
+
+  const pendingWorker = registration.installing ?? registration.waiting;
+  if (pendingWorker) {
+    await waitForWorkerActivation(pendingWorker);
+  } else if (!registration.active) {
+    const readyRegistration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<never>((_, reject) => {
+        window.setTimeout(() => reject(new Error("Service worker ready timed out.")), 10000);
+      }),
+    ]).catch((error) => {
+      pushLog("service worker ready wait failed", error);
+      return null;
+    });
+
+    if (readyRegistration) {
+      pushLog("navigator.serviceWorker.ready resolved", {
+        scope: readyRegistration.scope,
+        active: describeWorker(readyRegistration.active),
+        installing: describeWorker(readyRegistration.installing),
+        waiting: describeWorker(readyRegistration.waiting),
+      });
+      registration = readyRegistration;
+    }
+  }
+
+  registration = (await navigator.serviceWorker.getRegistration("/")) ?? registration;
   pushLog("service worker ready", {
     scope: registration.scope,
     hasActiveWorker: Boolean(registration.active),
   });
+
+  if (!registration.active) {
+    throw new Error("Push subscription requires an active service worker.");
+  }
+
   return registration;
 }
 
@@ -205,7 +281,14 @@ export async function ensurePushSubscription() {
   });
   const vapidPublicKey = await loadVapidPublicKey();
   const registration = await getRegistration();
+  pushLog("using registration for push", {
+    scope: registration.scope,
+    active: describeWorker(registration.active),
+    installing: describeWorker(registration.installing),
+    waiting: describeWorker(registration.waiting),
+  });
   const existing = await registration.pushManager.getSubscription();
+  pushLog("existing subscription lookup completed", await describeSubscription(existing));
   if (existing) {
     pushLog("reusing existing subscription");
     await savePushSubscription(existing);
@@ -213,10 +296,16 @@ export async function ensurePushSubscription() {
   }
 
   pushLog("creating new subscription");
-  const subscription = await registration.pushManager.subscribe({
+  const subscribeOptions = {
     userVisibleOnly: true,
     applicationServerKey: base64UrlToUint8Array(vapidPublicKey),
+  } satisfies PushSubscriptionOptionsInit;
+  pushLog("push subscribe options prepared", {
+    userVisibleOnly: subscribeOptions.userVisibleOnly,
+    applicationServerKeyLength: subscribeOptions.applicationServerKey.length,
   });
+  const subscription = await registration.pushManager.subscribe(subscribeOptions);
+  pushLog("push subscribe completed", await describeSubscription(subscription));
 
   await savePushSubscription(subscription);
   return subscription;
@@ -263,12 +352,16 @@ export async function sendTestPush() {
     });
 
   let subscription = await ensurePushSubscription();
+  pushLog("test push using subscription", await describeSubscription(subscription));
   let response = await send(subscription);
+  pushLog("test push response received", { status: response.status, ok: response.ok });
 
   if (!response.ok && response.status !== 400) {
     pushLog("test push failed, retrying with renewed subscription", { status: response.status });
     subscription = await renewPushSubscription();
+    pushLog("test push renewed subscription", await describeSubscription(subscription));
     response = await send(subscription);
+    pushLog("test push retry response received", { status: response.status, ok: response.ok });
   }
 
   if (!response.ok) {
