@@ -153,6 +153,7 @@ body {
   border-radius: 999px;
   background: #facc15;
   color: #111111;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.08em;
