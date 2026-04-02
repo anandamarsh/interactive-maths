@@ -637,35 +637,35 @@ export default function App() {
       {/* Drawer */}
       {drawer && (
         <>
-          <button
-            onClick={closeDrawer}
-            title="Home"
-            className="fixed top-1.5 left-2 z-[60] arcade-button w-10 h-10 p-2"
+          <div
+            className="fixed top-1.5 left-2 z-[60] flex items-center gap-2"
             style={{
               transform: drawerOpen ? "translateY(0)" : "translateY(100dvh)",
               transition: "transform 0.3s ease",
             }}
           >
-            <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-            </svg>
-          </button>
-
-          {drawer.githubUrl ? (
-            <a
-              href={drawer.githubUrl}
-              target="_blank"
-              rel="noreferrer"
-              title="Open app GitHub"
-              className="fixed top-1.5 right-12 z-[60] arcade-button w-10 h-10 p-2"
-              style={{
-                transform: drawerOpen ? "translateY(0)" : "translateY(100dvh)",
-                transition: "transform 0.3s ease",
-              }}
+            <button
+              onClick={closeDrawer}
+              title="Home"
+              className="arcade-button w-10 h-10 p-2"
             >
-              <GitHubIcon className="detail-github-icon" />
-            </a>
-          ) : null}
+              <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+              </svg>
+            </button>
+
+            {drawer.githubUrl ? (
+              <a
+                href={drawer.githubUrl}
+                target="_blank"
+                rel="noreferrer"
+                title="Open app GitHub"
+                className="arcade-button w-10 h-10 p-2"
+              >
+                <GitHubIcon className="detail-github-icon" />
+              </a>
+            ) : null}
+          </div>
 
           {/* Close button */}
           <button
