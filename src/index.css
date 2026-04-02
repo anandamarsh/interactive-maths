@@ -153,12 +153,12 @@ body {
   border-radius: 999px;
   background: #facc15;
   color: #111111;
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  padding: 0.5rem 0.85rem;
+  padding: 0.55rem 0.95rem;
   line-height: 1;
   white-space: nowrap;
 }
