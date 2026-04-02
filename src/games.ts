@@ -12,6 +12,7 @@ export interface GameManifest {
   tags?: string[];
   subjects?: string[];
   skills?: string[];
+  githubUrl?: string;
   description?: string;
   /** Set true in remote manifest to mark partner games */
   thirdParty?: boolean;
@@ -37,6 +38,7 @@ export interface Game {
   tags: string[];
   subjects: string[];
   skills: string[];
+  githubUrl?: string;
   description: string;
   /** Card + drawer art (first-party: omit → favicon.svg on game origin) */
   imageUrl?: string;
@@ -93,6 +95,7 @@ export function normalizeGame(
     tags: Array.isArray(raw.tags) ? raw.tags.map(String) : [],
     subjects: Array.isArray(raw.subjects) ? raw.subjects.map(String) : ["maths"],
     skills: Array.isArray(raw.skills) ? raw.skills.map(String) : [],
+    githubUrl: typeof raw.githubUrl === "string" ? raw.githubUrl.trim() || undefined : undefined,
     description: cleanedDescription,
     imageUrl: raw.imageUrl,
     thirdParty: Boolean(raw.thirdParty),

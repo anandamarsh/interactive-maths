@@ -7,22 +7,6 @@ import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
 
 const SHELL_GITHUB_URL = "https://github.com/anandamarsh/interactive-maths";
 
-function shellRepoUrlForGame(game: Game) {
-  try {
-    const hostname = new URL(game.url).hostname.replace(/^www\./, "");
-    if (hostname === "maths-distance-calculator.vercel.app") {
-      return "https://github.com/anandamarsh/maths-distance-calculator";
-    }
-    if (hostname === "maths-angle-explorer.vercel.app") {
-      return "https://github.com/anandamarsh/maths-angle-explorer";
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
-
 function GitHubIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
@@ -721,9 +705,9 @@ export default function App() {
                     )}
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    {shellRepoUrlForGame(drawer) ? (
+                    {drawer.githubUrl ? (
                       <a
-                        href={shellRepoUrlForGame(drawer)!}
+                        href={drawer.githubUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="arcade-button detail-github-button"
@@ -842,9 +826,9 @@ export default function App() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {shellRepoUrlForGame(drawer) ? (
+                  {drawer.githubUrl ? (
                     <a
-                      href={shellRepoUrlForGame(drawer)!}
+                      href={drawer.githubUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="arcade-button detail-github-button"
