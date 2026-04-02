@@ -371,31 +371,24 @@ export default function App() {
 
   async function enableNotifications() {
     if (typeof window === "undefined" || !("Notification" in window)) {
-      console.log("[interactive-maths push] notifications unsupported in this browser");
       setPushState("error");
       setPushError("Notifications are not available in this browser.");
       return;
     }
 
-    console.log("[interactive-maths push] enable requested", {
-      currentPermission: Notification.permission,
-    });
     setPushState("idle");
     setPushError("");
 
     const permission = await Notification.requestPermission();
-    console.log("[interactive-maths push] permission result", { permission });
     if (permission === "granted") {
       try {
         await ensurePushSubscription();
         setNotificationPreference("on");
-        console.log("[interactive-maths push] notifications enabled");
         return;
       } catch (error) {
         setNotificationPreference("off");
         setPushState("error");
         setPushError(error instanceof Error ? error.message : "Failed to enable notifications.");
-        console.log("[interactive-maths push] enable failed", error);
         return;
       }
     }
@@ -403,30 +396,25 @@ export default function App() {
     setNotificationPreference("off");
     setPushState("error");
     setPushError("Notifications were not allowed.");
-    console.log("[interactive-maths push] notifications not allowed");
   }
 
   function disableNotifications() {
     setNotificationPreference("off");
     setPushState("idle");
     setPushError("");
-    console.log("[interactive-maths push] notifications disabled in UI");
   }
 
   async function handleTestPush() {
     setPushState("sending");
     setPushError("");
-    console.log("[interactive-maths push] test push requested");
 
     try {
       await sendTestPush();
       setPushState("sent");
       window.setTimeout(() => setPushState("idle"), 1800);
-      console.log("[interactive-maths push] test push sent");
     } catch (error) {
       setPushState("error");
       setPushError(error instanceof Error ? error.message : "Push test failed.");
-      console.log("[interactive-maths push] test push failed", error);
     }
   }
 
