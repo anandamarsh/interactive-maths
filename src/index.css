@@ -174,10 +174,6 @@ body {
 }
 
 .app-settings-button {
-  position: absolute;
-  bottom: 1rem;
-  left: 1rem;
-  z-index: 40;
   width: 2.7rem;
   height: 2.7rem;
   display: inline-flex;
@@ -188,11 +184,34 @@ body {
   box-shadow: 0 10px 22px rgba(2, 6, 23, 0.45), 0 2px 8px rgba(2, 6, 23, 0.35);
 }
 
+.app-shell-actions {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 40;
+  display: flex;
+  gap: 0.6rem;
+}
+
 .app-settings-icon {
   width: 100%;
   height: 100%;
   display: block;
   transform: scale(1.12);
+}
+
+.detail-github-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0.5rem;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.detail-github-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .settings-overlay {

@@ -5,6 +5,32 @@ import type { Game, GameListEntry } from "./games";
 import { loadGamesList } from "./games";
 import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
 
+const SHELL_GITHUB_URL = "https://github.com/anandamarsh/interactive-maths";
+
+function shellRepoUrlForGame(game: Game) {
+  try {
+    const hostname = new URL(game.url).hostname.replace(/^www\./, "");
+    if (hostname === "maths-distance-calculator.vercel.app") {
+      return "https://github.com/anandamarsh/maths-distance-calculator";
+    }
+    if (hostname === "maths-angle-explorer.vercel.app") {
+      return "https://github.com/anandamarsh/maths-angle-explorer";
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function GitHubIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.02c-3.34.73-4.04-1.42-4.04-1.42-.55-1.38-1.33-1.74-1.33-1.74-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.23 1.84 1.23 1.08 1.84 2.82 1.31 3.5 1 .11-.78.42-1.31.77-1.61-2.67-.3-5.47-1.33-5.47-5.94 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.53.12-3.18 0 0 1.01-.32 3.3 1.23a11.4 11.4 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.62-2.81 5.64-5.49 5.94.43.37.82 1.1.82 2.22v3.29c0 .32.22.69.83.58A12 12 0 0 0 12 .5Z" />
+    </svg>
+  );
+}
+
 /** Avoid mixed-content when the shell is HTTPS */
 function iframeSrc(url: string): string {
   if (typeof window === "undefined") return url;
@@ -515,16 +541,27 @@ export default function App() {
 
   return (
     <div className="min-h-[100lvh] px-6 py-10">
-      <button
-        type="button"
-        onClick={() => setShowSettingsModal(true)}
-        title="Settings"
-        className="arcade-button app-settings-button"
-      >
-        <svg viewBox="0 0 24 24" className="app-settings-icon" fill="currentColor" aria-hidden="true">
-          <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.028 7.028 0 0 0-1.63-.94l-.36-2.54A.488.488 0 0 0 13.9 2h-3.8c-.24 0-.44.17-.48.41l-.36 2.54c-.59.24-1.13.55-1.63.94l-2.39-.96a.493.493 0 0 0-.6.22L2.72 8.47a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.07.64-.07.95s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.22.39.31.6.22l2.39-.96c.5.39 1.05.71 1.63.94l.36 2.54c.04.24.24.41.48.41h3.8c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.55 1.63-.94l2.39.96c.22.09.48 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
-        </svg>
-      </button>
+      <div className="app-shell-actions">
+        <a
+          href={SHELL_GITHUB_URL}
+          target="_blank"
+          rel="noreferrer"
+          title="Open shell GitHub"
+          className="arcade-button app-settings-button"
+        >
+          <GitHubIcon className="app-settings-icon" />
+        </a>
+        <button
+          type="button"
+          onClick={() => setShowSettingsModal(true)}
+          title="Settings"
+          className="arcade-button app-settings-button"
+        >
+          <svg viewBox="0 0 24 24" className="app-settings-icon" fill="currentColor" aria-hidden="true">
+            <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.028 7.028 0 0 0-1.63-.94l-.36-2.54A.488.488 0 0 0 13.9 2h-3.8c-.24 0-.44.17-.48.41l-.36 2.54c-.59.24-1.13.55-1.63.94l-2.39-.96a.493.493 0 0 0-.6.22L2.72 8.47a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.07.64-.07.95s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.22.39.31.6.22l2.39-.96c.5.39 1.05.71 1.63.94l.36 2.54c.04.24.24.41.48.41h3.8c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.55 1.63-.94l2.39.96c.22.09.48 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+          </svg>
+        </button>
+      </div>
       <div className="max-w-5xl mx-auto w-full">
         <header className="flex flex-col items-center text-center mb-10">
           <p className="text-[1.125rem] font-bold tracking-[0.25em] uppercase text-sky-400 mb-1">
@@ -683,27 +720,40 @@ export default function App() {
                       </p>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      startPlay(drawer);
-                      if (!drawer.openInNewTab) closeDrawer();
-                    }}
-                    className="mt-2 self-start rounded-xl px-6 py-2 text-sm font-bold text-black cursor-pointer transition-all"
-                    style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.background =
-                        "linear-gradient(135deg, #86efac, #22c55e)";
-                      (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.background =
-                        "linear-gradient(135deg, #4ade80, #16a34a)";
-                      (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-                    }}
-                  >
-                    {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
-                  </button>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {shellRepoUrlForGame(drawer) ? (
+                      <a
+                        href={shellRepoUrlForGame(drawer)!}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="arcade-button detail-github-button"
+                        title="Open app GitHub"
+                      >
+                        <GitHubIcon className="detail-github-icon" />
+                      </a>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        startPlay(drawer);
+                        if (!drawer.openInNewTab) closeDrawer();
+                      }}
+                      className="self-start rounded-xl px-6 py-2 text-sm font-bold text-black cursor-pointer transition-all"
+                      style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.background =
+                          "linear-gradient(135deg, #86efac, #22c55e)";
+                        (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.background =
+                          "linear-gradient(135deg, #4ade80, #16a34a)";
+                        (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                      }}
+                    >
+                      {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
+                    </button>
+                  </div>
                   {drawer.thirdParty && !drawer.openInNewTab && (
                     <button
                       type="button"
@@ -792,6 +842,17 @@ export default function App() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {shellRepoUrlForGame(drawer) ? (
+                    <a
+                      href={shellRepoUrlForGame(drawer)!}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="arcade-button detail-github-button"
+                      title="Open app GitHub"
+                    >
+                      <GitHubIcon className="detail-github-icon" />
+                    </a>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => {
