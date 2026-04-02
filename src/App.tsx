@@ -996,9 +996,9 @@ export default function App() {
         className="shell-social-comments-drawer"
         aria-hidden={!showCommentsDrawer}
         style={{
-          width: isMobileLandscape || isMobilePortrait ? "100vw" : "70vw",
+          width: "100vw",
           height: isMobileLandscape || isMobilePortrait ? "100dvh" : "70vh",
-          maxWidth: isMobileLandscape || isMobilePortrait ? "100vw" : "70vw",
+          maxWidth: "100vw",
           maxHeight: isMobileLandscape || isMobilePortrait ? "100dvh" : "70vh",
           transform: showCommentsDrawer ? "translateY(0)" : "translateY(100%)",
         }}
