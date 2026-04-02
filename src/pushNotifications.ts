@@ -107,9 +107,47 @@ async function getRegistration() {
     updateViaCache: "none",
   });
 
+  const waitForActivation = async () => {
+    if (registration.active) {
+      return registration;
+    }
+
+    const worker = registration.installing ?? registration.waiting;
+    if (!worker) {
+      throw new Error("Push subscription requires an active service worker.");
+    }
+
+    pushLog("waiting for service worker activation", { state: worker.state });
+    await new Promise<void>((resolve, reject) => {
+      const timeoutId = window.setTimeout(() => {
+        reject(new Error("Service worker activation timed out."));
+      }, 10000);
+
+      const handleStateChange = () => {
+        pushLog("service worker state changed", { state: worker.state });
+        if (worker.state === "activated") {
+          window.clearTimeout(timeoutId);
+          worker.removeEventListener("statechange", handleStateChange);
+          resolve();
+          return;
+        }
+
+        if (worker.state === "redundant") {
+          window.clearTimeout(timeoutId);
+          worker.removeEventListener("statechange", handleStateChange);
+          reject(new Error("Service worker became redundant before activation."));
+        }
+      };
+
+      worker.addEventListener("statechange", handleStateChange);
+      handleStateChange();
+    });
+  };
+
   await registration.update().catch((error) => {
     pushLog("service worker update failed", error);
   });
+  await waitForActivation();
   pushLog("service worker ready", {
     scope: registration.scope,
     hasActiveWorker: Boolean(registration.active),
