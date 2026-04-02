@@ -651,6 +651,22 @@ export default function App() {
             </svg>
           </button>
 
+          {drawer.githubUrl ? (
+            <a
+              href={drawer.githubUrl}
+              target="_blank"
+              rel="noreferrer"
+              title="Open app GitHub"
+              className="fixed top-1.5 right-12 z-[60] arcade-button w-10 h-10 p-2"
+              style={{
+                transform: drawerOpen ? "translateY(0)" : "translateY(100dvh)",
+                transition: "transform 0.3s ease",
+              }}
+            >
+              <GitHubIcon className="detail-github-icon" />
+            </a>
+          ) : null}
+
           {/* Close button */}
           <button
             onClick={closeDrawer}
@@ -705,17 +721,6 @@ export default function App() {
                     )}
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    {drawer.githubUrl ? (
-                      <a
-                        href={drawer.githubUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="arcade-button detail-github-button"
-                        title="Open app GitHub"
-                      >
-                        <GitHubIcon className="detail-github-icon" />
-                      </a>
-                    ) : null}
                     <button
                       type="button"
                       onClick={() => {
@@ -826,17 +831,6 @@ export default function App() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {drawer.githubUrl ? (
-                    <a
-                      href={drawer.githubUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="arcade-button detail-github-button"
-                      title="Open app GitHub"
-                    >
-                      <GitHubIcon className="detail-github-icon" />
-                    </a>
-                  ) : null}
                   <button
                     type="button"
                     onClick={() => {
