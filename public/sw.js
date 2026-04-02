@@ -19,7 +19,38 @@ const APP_SHELL_ASSETS = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(APP_SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL_ASSETS)).then(() => self.skipWaiting()),
+    (async () => {
+      const cache = await caches.open(APP_SHELL_CACHE);
+      const results = await Promise.allSettled(
+        APP_SHELL_ASSETS.map(async (asset) => {
+          const response = await fetch(asset, { cache: "no-cache" });
+          if (!response.ok) {
+            throw new Error(`Failed to cache ${asset} (${response.status})`);
+          }
+
+          await cache.put(asset, response);
+          return asset;
+        }),
+      );
+
+      const failures = results
+        .map((result, index) => ({ result, asset: APP_SHELL_ASSETS[index] }))
+        .filter(({ result }) => result.status === "rejected");
+
+      if (failures.length > 0) {
+        console.error(
+          "[interactive-maths sw] precache failures",
+          failures.map(({ asset, result }) => ({
+            asset,
+            reason: result.reason instanceof Error ? result.reason.message : String(result.reason),
+          })),
+        );
+      } else {
+        console.log("[interactive-maths sw] precache complete", { count: APP_SHELL_ASSETS.length });
+      }
+
+      await self.skipWaiting();
+    })(),
   );
 });
 
@@ -31,7 +62,10 @@ self.addEventListener("activate", (event) => {
           .filter((key) => ![APP_SHELL_CACHE, RUNTIME_CACHE].includes(key))
           .map((key) => caches.delete(key)),
       ),
-    ).then(() => self.clients.claim()),
+    ).then(() => {
+      console.log("[interactive-maths sw] activate complete");
+      return self.clients.claim();
+    }),
   );
 });
 
