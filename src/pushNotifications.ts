@@ -102,12 +102,11 @@ async function getRegistration() {
   }
 
   pushLog("registering service worker", { scope: "/" });
-  await navigator.serviceWorker.register("/sw.js", {
+  const registration = await navigator.serviceWorker.register("/sw.js", {
     scope: "/",
     updateViaCache: "none",
   });
 
-  const registration = await navigator.serviceWorker.ready;
   await registration.update().catch((error) => {
     pushLog("service worker update failed", error);
   });
