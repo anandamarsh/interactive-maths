@@ -18,6 +18,17 @@ const APP_SHELL_ASSETS = [
   "./games-local.json",
 ].map((asset) => new URL(asset, SCOPE_URL).pathname);
 
+function resolveAppUrl(candidate) {
+  try {
+    const resolved = new URL(candidate || "./", SCOPE_URL);
+    const sameOrigin = resolved.origin === SCOPE_URL.origin;
+    const inScope = resolved.pathname.startsWith(SCOPE_URL.pathname);
+    return sameOrigin && inScope ? resolved.href : SCOPE_URL.href;
+  } catch {
+    return SCOPE_URL.href;
+  }
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
@@ -115,7 +126,7 @@ self.addEventListener("push", (event) => {
 
   const title = payload.title || "Interactive Maths";
   const body = payload.body || "You have a new notification.";
-  const url = new URL(payload.url || "./", SCOPE_URL).href;
+  const url = resolveAppUrl(payload.url);
   const tag = payload.tag || "interactive-maths-push";
 
   event.waitUntil(
@@ -132,7 +143,7 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const targetUrl = new URL(event.notification.data?.url || "./", SCOPE_URL);
+  const targetUrl = new URL(resolveAppUrl(event.notification.data?.url), SCOPE_URL);
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       const scopedClients = clients.filter((client) => {

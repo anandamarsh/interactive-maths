@@ -13,6 +13,23 @@ type SerializedPushSubscription = {
   };
 };
 
+type AppPushMetadata = {
+  appId: string;
+  appName: string;
+  appOrigin: string;
+  appScope: string;
+};
+
+function getAppPushMetadata(): AppPushMetadata {
+  const scopeUrl = new URL("./", window.location.href);
+  return {
+    appId: "interactive-maths",
+    appName: "Interactive Maths",
+    appOrigin: window.location.origin,
+    appScope: scopeUrl.href,
+  };
+}
+
 function requirePushConfig() {
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error("Push notifications are not configured for this app.");
@@ -168,6 +185,7 @@ function serializePushSubscription(subscription: PushSubscription): SerializedPu
 
 async function savePushSubscription(subscription: PushSubscription) {
   const payload = serializePushSubscription(subscription);
+  const app = getAppPushMetadata();
   const response = await fetch(`${supabaseUrl}/functions/v1/save-push-subscription`, {
     method: "POST",
     headers: {
@@ -175,7 +193,7 @@ async function savePushSubscription(subscription: PushSubscription) {
       apikey: supabaseAnonKey,
       Authorization: `Bearer ${supabaseAnonKey}`,
     },
-    body: JSON.stringify({ subscription: payload }),
+    body: JSON.stringify({ subscription: payload, app }),
   });
 
   if (!response.ok) {
@@ -232,6 +250,7 @@ export async function sendTestPush() {
     throw new Error("Enable notifications first.");
   }
 
+  const app = getAppPushMetadata();
   const send = async (subscription: PushSubscription) =>
     fetch(`${supabaseUrl}/functions/v1/test-push`, {
       method: "POST",
@@ -242,9 +261,10 @@ export async function sendTestPush() {
       },
       body: JSON.stringify({
         subscription: serializePushSubscription(subscription),
-        title: "Interactive Maths",
+        title: app.appName,
         body: "Push notifications are working.",
-        url: window.location.origin,
+        url: app.appScope,
+        app,
       }),
     });
 
