@@ -9,7 +9,10 @@ const isLocalhost =
 
 if ((import.meta.env.PROD || isLocalhost) && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
+    const scriptUrl = new URL('./sw.js', window.location.href)
+    const scopeUrl = new URL('./', window.location.href)
+
+    navigator.serviceWorker.register(scriptUrl.pathname, { scope: scopeUrl.pathname }).catch(() => {})
   })
 }
 

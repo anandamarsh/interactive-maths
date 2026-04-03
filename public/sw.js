@@ -1,21 +1,22 @@
-const CACHE_VERSION = "interactive-maths-v3";
+const CACHE_VERSION = "interactive-maths-v4";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
+const SCOPE_URL = new URL(self.registration.scope);
 const APP_SHELL_ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.webmanifest",
-  "/favicon.ico",
-  "/favicon.svg",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/icon-512-mask512.png",
-  "/icon-1024.png",
-  "/apple-touch-icon.png",
-  "/apple-touch-icon-opaque-1024.png",
-  "/games.json",
-  "/games-local.json",
-];
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./favicon.ico",
+  "./favicon.svg",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-512-mask512.png",
+  "./icon-1024.png",
+  "./apple-touch-icon.png",
+  "./apple-touch-icon-opaque-1024.png",
+  "./games.json",
+  "./games-local.json",
+].map((asset) => new URL(asset, SCOPE_URL).pathname);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -73,7 +74,7 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(async () => {
           const cachedPage = await caches.match(event.request);
-          return cachedPage || caches.match("/index.html");
+          return cachedPage || caches.match(new URL("./index.html", SCOPE_URL).pathname);
         }),
     );
     return;
@@ -114,7 +115,7 @@ self.addEventListener("push", (event) => {
 
   const title = payload.title || "Interactive Maths";
   const body = payload.body || "You have a new notification.";
-  const url = payload.url || "/";
+  const url = new URL(payload.url || "./", SCOPE_URL).href;
   const tag = payload.tag || "interactive-maths-push";
 
   event.waitUntil(
@@ -122,8 +123,8 @@ self.addEventListener("push", (event) => {
       body,
       tag,
       data: { url },
-      icon: "/icon-192.png",
-      badge: "/icon-192.png",
+      icon: new URL("./icon-192.png", SCOPE_URL).pathname,
+      badge: new URL("./icon-192.png", SCOPE_URL).pathname,
     }),
   );
 });
@@ -131,18 +132,34 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const targetUrl = event.notification.data?.url || "/";
+  const targetUrl = new URL(event.notification.data?.url || "./", SCOPE_URL);
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      const scopedClients = clients.filter((client) => {
+        try {
+          const clientUrl = new URL(client.url);
+          return clientUrl.origin === targetUrl.origin && clientUrl.pathname.startsWith(SCOPE_URL.pathname);
+        } catch {
+          return false;
+        }
+      });
+
+      const preferredClient = scopedClients.find((client) => client.url === targetUrl.href) ?? scopedClients[0];
+
+      if (preferredClient && "focus" in preferredClient) {
+        preferredClient.navigate(targetUrl.href);
+        return preferredClient.focus();
+      }
+
       for (const client of clients) {
-        if ("focus" in client) {
-          client.navigate(targetUrl);
+        if ("focus" in client && client.url === targetUrl.href) {
+          client.navigate(targetUrl.href);
           return client.focus();
         }
       }
 
       if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl);
+        return self.clients.openWindow(targetUrl.href);
       }
 
       return undefined;

@@ -88,6 +88,9 @@ async function getRegistration() {
     throw new Error("This browser does not support service workers.");
   }
 
+  const scopeUrl = new URL("./", window.location.href);
+  const scriptUrl = new URL("./sw.js", window.location.href);
+
   const waitForWorkerActivation = (worker: ServiceWorker) =>
     new Promise<void>((resolve, reject) => {
       const timeoutId = window.setTimeout(() => {
@@ -114,10 +117,10 @@ async function getRegistration() {
       handleStateChange();
     });
 
-  let registration = await navigator.serviceWorker.getRegistration("/");
+  let registration = await navigator.serviceWorker.getRegistration(scopeUrl.href);
   if (!registration) {
-    registration = await navigator.serviceWorker.register("/sw.js", {
-      scope: "/",
+    registration = await navigator.serviceWorker.register(scriptUrl.pathname, {
+      scope: scopeUrl.pathname,
       updateViaCache: "none",
     });
   }
@@ -138,7 +141,7 @@ async function getRegistration() {
     }
   }
 
-  registration = (await navigator.serviceWorker.getRegistration("/")) ?? registration;
+  registration = (await navigator.serviceWorker.getRegistration(scopeUrl.href)) ?? registration;
   if (!registration.active) {
     throw new Error("Push subscription requires an active service worker.");
   }
