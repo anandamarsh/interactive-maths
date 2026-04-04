@@ -146,13 +146,9 @@ function LevelLaunchButtons({
           key={level}
           type="button"
           onClick={() => onSelect(level)}
-          className="relative h-14 w-14 shrink-0 rounded-full cursor-pointer transition-all"
+          className="relative h-14 w-14 shrink-0 cursor-pointer transition-all"
           style={{
-            background:
-              "radial-gradient(circle at 32% 28%, #86efac 0%, #4ade80 20%, #22c55e 52%, #15803d 100%)",
-            border: "2px solid rgba(220,252,231,0.9)",
-            boxShadow:
-              "0 8px 18px rgba(34,197,94,0.32), inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -6px 12px rgba(20,83,45,0.35)",
+            filter: "drop-shadow(0 8px 14px rgba(34,197,94,0.24))",
           }}
           title={`Play level ${level}`}
           aria-label={`Play level ${level}`}
@@ -163,29 +159,30 @@ function LevelLaunchButtons({
             (e.currentTarget as HTMLElement).style.transform = "scale(1)";
           }}
         >
-          <div
-            className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full"
-            style={{
-              background: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.18)",
-            }}
-          >
-            <span
-              className="text-lg font-black"
-              style={{ color: "#f8fafc", textShadow: "0 1px 2px rgba(20,83,45,0.45)" }}
-            >
-              {level}
-            </span>
-          </div>
-          <svg
-            viewBox="0 0 24 24"
-            className="absolute left-[9px] top-1/2 h-4 w-4 -translate-y-1/2"
-            fill="#14532d"
-            aria-hidden="true"
-            style={{ filter: "drop-shadow(0 1px 0 rgba(220,252,231,0.35))" }}
-          >
-            <path d="M8 6v12l10-6z" />
+          <svg viewBox="0 0 24 24" className="h-full w-full" fill="none" aria-hidden="true">
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M7.25007 2.38782C8.54878 2.0992 10.1243 2 12 2C13.8757 2 15.4512 2.0992 16.7499 2.38782C18.06 2.67897 19.1488 3.176 19.9864 4.01358C20.824 4.85116 21.321 5.94002 21.6122 7.25007C21.9008 8.54878 22 10.1243 22 12C22 13.8757 21.9008 15.4512 21.6122 16.7499C21.321 18.06 20.824 19.1488 19.9864 19.9864C19.1488 20.824 18.06 21.321 16.7499 21.6122C15.4512 21.9008 13.8757 22 12 22C10.1243 22 8.54878 21.9008 7.25007 21.6122C5.94002 21.321 4.85116 20.824 4.01358 19.9864C3.176 19.1488 2.67897 18.06 2.38782 16.7499C2.0992 15.4512 2 13.8757 2 12C2 10.1243 2.0992 8.54878 2.38782 7.25007C2.67897 5.94002 3.176 4.85116 4.01358 4.01358C4.85116 3.176 5.94002 2.67897 7.25007 2.38782Z"
+              fill="#3aac1b"
+            />
+            <path
+              d="M7.25007 2.38782C8.54878 2.0992 10.1243 2 12 2C13.8757 2 15.4512 2.0992 16.7499 2.38782C18.06 2.67897 19.1488 3.176 19.9864 4.01358C20.824 4.85116 21.321 5.94002 21.6122 7.25007C21.9008 8.54878 22 10.1243 22 12C22 13.8757 21.9008 15.4512 21.6122 16.7499C21.321 18.06 20.824 19.1488 19.9864 19.9864C19.1488 20.824 18.06 21.321 16.7499 21.6122C15.4512 21.9008 13.8757 22 12 22C10.1243 22 8.54878 21.9008 7.25007 21.6122C5.94002 21.321 4.85116 20.824 4.01358 19.9864C3.176 19.1488 2.67897 18.06 2.38782 16.7499C2.0992 15.4512 2 13.8757 2 12C2 10.1243 2.0992 8.54878 2.38782 7.25007C2.67897 5.94002 3.176 4.85116 4.01358 4.01358C4.85116 3.176 5.94002 2.67897 7.25007 2.38782Z"
+              stroke="rgba(220,252,231,0.95)"
+              strokeWidth="1.2"
+            />
+            <path
+              d="M15.5963 10.3318C16.8872 11.0694 16.8872 12.9307 15.5963 13.6683L11.154 16.2068C9.9715 16.8825 8.5002 16.0287 8.5002 14.6667L8.5002 9.33339C8.5002 7.97146 9.9715 7.11762 11.154 7.79333L15.5963 10.3318Z"
+              fill="#14532d"
+              opacity="0.92"
+            />
           </svg>
+          <span
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-black"
+            style={{ color: "#f8fafc", textShadow: "0 1px 2px rgba(20,83,45,0.55)" }}
+          >
+            {level}
+          </span>
         </button>
       ))}
     </div>
