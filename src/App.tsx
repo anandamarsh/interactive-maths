@@ -343,7 +343,7 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
         className="hide-scrollbar flex gap-3 overflow-x-auto overflow-y-hidden rounded-2xl"
         style={{
           scrollBehavior: "auto",
-          touchAction: "pan-x",
+          touchAction: "pan-x pan-y",
           height: "min(44svh, 280px)",
           opacity: allImagesLoaded ? 1 : 0,
           transition: "opacity 0.18s ease",
