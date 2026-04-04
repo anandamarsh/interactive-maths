@@ -146,44 +146,23 @@ function LevelLaunchButtons({
           key={level}
           type="button"
           onClick={() => onSelect(level)}
-          className="relative h-14 w-14 shrink-0 cursor-pointer transition-all"
-          style={{
-            filter: "drop-shadow(0 8px 14px rgba(34,197,94,0.24))",
-          }}
+          className="inline-flex items-center gap-3 rounded-xl px-5 py-2 text-sm font-bold text-black cursor-pointer transition-all"
+          style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
           title={`Play level ${level}`}
           aria-label={`Play level ${level}`}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.transform = "scale(1.05)";
+            (e.currentTarget as HTMLElement).style.background =
+              "linear-gradient(135deg, #86efac, #22c55e)";
+            (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
           }}
           onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background =
+              "linear-gradient(135deg, #4ade80, #16a34a)";
             (e.currentTarget as HTMLElement).style.transform = "scale(1)";
           }}
         >
-          <svg viewBox="0 0 60 60" className="h-full w-full" fill="none" aria-hidden="true">
-            <path
-              d="M30 0C13.458 0 0 13.458 0 30s13.458 30 30 30 30-13.458 30-30S46.542 0 30 0Z"
-              fill="#7cd76a"
-            />
-            <path
-              d="M30 1.25C14.148 1.25 1.25 14.148 1.25 30S14.148 58.75 30 58.75 58.75 45.852 58.75 30 45.852 1.25 30 1.25Z"
-              stroke="#e4fbdf"
-              strokeWidth="2.16"
-            />
-            <path
-              d="M45.563 30.826L23.563 45.826C23.394 45.941 23.197 46 23 46C22.84 46 22.679 45.962 22.533 45.884C22.205 45.711 22 45.371 22 45V15C22 14.629 22.205 14.289 22.533 14.116C22.861 13.942 23.257 13.966 23.564 14.174L45.564 29.174C45.836 29.36 46 29.669 46 30C46 30.331 45.836 30.64 45.563 30.826Z"
-              fill="#7cd76a"
-              stroke="#e4fbdf"
-              strokeWidth="2.16"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <span
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-black"
-            style={{ color: "#f8fafc", textShadow: "0 1px 2px rgba(20,83,45,0.55)" }}
-          >
-            {level}
-          </span>
+          <span aria-hidden="true">▶</span>
+          <span>{`Level ${level}`}</span>
         </button>
       ))}
     </div>
