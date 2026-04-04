@@ -149,10 +149,10 @@ function LevelLaunchButtons({
           className="relative h-14 w-14 shrink-0 rounded-full cursor-pointer transition-all"
           style={{
             background:
-              "radial-gradient(circle at 30% 28%, #f0fdf4 0%, #86efac 22%, #22c55e 52%, #15803d 100%)",
-            border: "2px solid rgba(240,253,244,0.9)",
+              "radial-gradient(circle at 32% 28%, #86efac 0%, #4ade80 20%, #22c55e 52%, #15803d 100%)",
+            border: "2px solid rgba(220,252,231,0.9)",
             boxShadow:
-              "0 8px 18px rgba(34,197,94,0.38), inset 0 2px 0 rgba(255,255,255,0.55), inset 0 -4px 10px rgba(20,83,45,0.45)",
+              "0 8px 18px rgba(34,197,94,0.32), inset 0 2px 0 rgba(255,255,255,0.4), inset 0 -6px 12px rgba(20,83,45,0.35)",
           }}
           title={`Play level ${level}`}
           aria-label={`Play level ${level}`}
@@ -166,13 +166,13 @@ function LevelLaunchButtons({
           <div
             className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full"
             style={{
-              background: "rgba(255,255,255,0.14)",
-              border: "1px solid rgba(255,255,255,0.32)",
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.18)",
             }}
           >
             <span
               className="text-lg font-black"
-              style={{ color: "#052e16", textShadow: "0 1px 0 rgba(255,255,255,0.35)" }}
+              style={{ color: "#f8fafc", textShadow: "0 1px 2px rgba(20,83,45,0.45)" }}
             >
               {level}
             </span>
@@ -180,9 +180,9 @@ function LevelLaunchButtons({
           <svg
             viewBox="0 0 24 24"
             className="absolute left-[9px] top-1/2 h-4 w-4 -translate-y-1/2"
-            fill="#f8fafc"
+            fill="#14532d"
             aria-hidden="true"
-            style={{ filter: "drop-shadow(0 1px 1px rgba(20,83,45,0.45))" }}
+            style={{ filter: "drop-shadow(0 1px 0 rgba(220,252,231,0.35))" }}
           >
             <path d="M8 6v12l10-6z" />
           </svg>
