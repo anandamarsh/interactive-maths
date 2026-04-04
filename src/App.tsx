@@ -28,6 +28,32 @@ function iframeSrc(url: string): string {
   }
 }
 
+function hostName(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
+function getLaunchLevels(game: Game): number[] {
+  const host = hostName(game.url) ?? "";
+  if (host.includes("maths-angle-explorer")) return [1, 2];
+  if (host.includes("maths-distance-calculator")) return [1, 2, 3];
+  return [];
+}
+
+function withLevelParam(url: string, level: number): string {
+  try {
+    const next = new URL(url);
+    next.searchParams.set("level", String(level));
+    return next.toString();
+  } catch {
+    const joiner = url.includes("?") ? "&" : "?";
+    return `${url}${joiner}level=${level}`;
+  }
+}
+
 const SKILL_COLORS = [
   { bg: "rgba(56,189,248,0.15)",  color: "#38bdf8" },
   { bg: "rgba(167,139,250,0.15)", color: "#a78bfa" },
@@ -102,6 +128,66 @@ function PartnerIframeChrome({ url }: { url: string }) {
       >
         {url}
       </p>
+    </div>
+  );
+}
+
+function LevelLaunchButtons({
+  levels,
+  onSelect,
+}: {
+  levels: number[];
+  onSelect: (level: number) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {levels.map((level) => (
+        <button
+          key={level}
+          type="button"
+          onClick={() => onSelect(level)}
+          className="relative h-14 w-14 shrink-0 rounded-full cursor-pointer transition-all"
+          style={{
+            background:
+              "radial-gradient(circle at 30% 28%, #f0fdf4 0%, #86efac 22%, #22c55e 52%, #15803d 100%)",
+            border: "2px solid rgba(240,253,244,0.9)",
+            boxShadow:
+              "0 8px 18px rgba(34,197,94,0.38), inset 0 2px 0 rgba(255,255,255,0.55), inset 0 -4px 10px rgba(20,83,45,0.45)",
+          }}
+          title={`Play level ${level}`}
+          aria-label={`Play level ${level}`}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLElement).style.transform = "scale(1.05)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+          }}
+        >
+          <div
+            className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full"
+            style={{
+              background: "rgba(255,255,255,0.14)",
+              border: "1px solid rgba(255,255,255,0.32)",
+            }}
+          >
+            <span
+              className="text-lg font-black"
+              style={{ color: "#052e16", textShadow: "0 1px 0 rgba(255,255,255,0.35)" }}
+            >
+              {level}
+            </span>
+          </div>
+          <svg
+            viewBox="0 0 24 24"
+            className="absolute left-[9px] top-1/2 h-4 w-4 -translate-y-1/2"
+            fill="#f8fafc"
+            aria-hidden="true"
+            style={{ filter: "drop-shadow(0 1px 1px rgba(20,83,45,0.45))" }}
+          >
+            <path d="M8 6v12l10-6z" />
+          </svg>
+        </button>
+      ))}
     </div>
   );
 }
@@ -308,7 +394,7 @@ export default function App() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState<Game | null>(null);
+  const [active, setActive] = useState<{ game: Game; url: string } | null>(null);
   const [drawer, setDrawer] = useState<Game | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showShareDrawer, setShowShareDrawer] = useState(false);
@@ -474,14 +560,15 @@ export default function App() {
     );
   });
 
-  function startPlay(g: Game) {
+  function startPlay(g: Game, level?: number) {
     closeSocialDrawers();
     setEmbeddedOverlayActive(false);
+    const targetUrl = level ? withLevelParam(g.url, level) : g.url;
     if (g.openInNewTab) {
-      window.open(g.url, "_blank", "noopener,noreferrer");
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
       return;
     }
-    setActive(g);
+    setActive({ game: g, url: targetUrl });
   }
 
   useEffect(() => {
@@ -505,9 +592,9 @@ export default function App() {
           className="w-full h-full border-0"
           allow="autoplay; fullscreen; clipboard-write; encrypted-media; web-share"
           referrerPolicy="no-referrer-when-downgrade"
-          title={active.name}
+          title={active.game.name}
         />
-        {active.thirdParty && <PartnerIframeChrome url={active.url} />}
+        {active.game.thirdParty && <PartnerIframeChrome url={active.url} />}
         {!embeddedOverlayActive ? (
           <button
             onClick={() => setActive(null)}
@@ -721,27 +808,37 @@ export default function App() {
                     )}
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        startPlay(drawer);
-                        if (!drawer.openInNewTab) closeDrawer();
-                      }}
-                      className="self-start rounded-xl px-6 py-2 text-sm font-bold text-black cursor-pointer transition-all"
-                      style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.background =
-                          "linear-gradient(135deg, #86efac, #22c55e)";
-                        (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.background =
-                          "linear-gradient(135deg, #4ade80, #16a34a)";
-                        (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-                      }}
-                    >
-                      {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
-                    </button>
+                    {getLaunchLevels(drawer).length > 0 ? (
+                      <LevelLaunchButtons
+                        levels={getLaunchLevels(drawer)}
+                        onSelect={(level) => {
+                          startPlay(drawer, level);
+                          if (!drawer.openInNewTab) closeDrawer();
+                        }}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          startPlay(drawer);
+                          if (!drawer.openInNewTab) closeDrawer();
+                        }}
+                        className="self-start rounded-xl px-6 py-2 text-sm font-bold text-black cursor-pointer transition-all"
+                        style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.background =
+                            "linear-gradient(135deg, #86efac, #22c55e)";
+                          (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.background =
+                            "linear-gradient(135deg, #4ade80, #16a34a)";
+                          (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                        }}
+                      >
+                        {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
+                      </button>
+                    )}
                   </div>
                   {drawer.thirdParty && !drawer.openInNewTab && (
                     <button
@@ -831,27 +928,37 @@ export default function App() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      startPlay(drawer);
-                      if (!drawer.openInNewTab) closeDrawer();
-                    }}
-                    className="px-6 py-2 rounded-xl font-bold text-sm text-black cursor-pointer transition-all"
-                    style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.background =
-                        "linear-gradient(135deg, #86efac, #22c55e)";
-                      (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.background =
-                        "linear-gradient(135deg, #4ade80, #16a34a)";
-                      (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-                    }}
-                  >
-                    {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
-                  </button>
+                  {getLaunchLevels(drawer).length > 0 ? (
+                    <LevelLaunchButtons
+                      levels={getLaunchLevels(drawer)}
+                      onSelect={(level) => {
+                        startPlay(drawer, level);
+                        if (!drawer.openInNewTab) closeDrawer();
+                      }}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        startPlay(drawer);
+                        if (!drawer.openInNewTab) closeDrawer();
+                      }}
+                      className="px-6 py-2 rounded-xl font-bold text-sm text-black cursor-pointer transition-all"
+                      style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.background =
+                          "linear-gradient(135deg, #86efac, #22c55e)";
+                        (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.background =
+                          "linear-gradient(135deg, #4ade80, #16a34a)";
+                        (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                      }}
+                    >
+                      {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
+                    </button>
+                  )}
                   {drawer.thirdParty && !drawer.openInNewTab && (
                     <button
                       type="button"
