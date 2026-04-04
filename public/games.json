@@ -1,9 +1,6 @@
 [
-  "https://maths-trail-distances-basics.vercel.app/",
-  "https://maths-trail-distances-missing-dista.vercel.app/",
-  "https://maths-trail-distances-compare-dista.vercel.app/",
-  "https://maths-angle-types-explorer.vercel.app/",
-  "https://maths-missing-angle-explorer.vercel.app/",
+  "https://maths-distance-calculator.vercel.app/",
+  "https://maths-angle-explorer.vercel.app/",
   {
     "playUrl": "https://locicomplex.com/",
     "manifest": {
