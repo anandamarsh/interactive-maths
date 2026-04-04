@@ -159,22 +159,23 @@ function LevelLaunchButtons({
             (e.currentTarget as HTMLElement).style.transform = "scale(1)";
           }}
         >
-          <svg viewBox="0 0 24 24" className="h-full w-full" fill="none" aria-hidden="true">
+          <svg viewBox="0 0 60 60" className="h-full w-full" fill="none" aria-hidden="true">
             <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M7.25007 2.38782C8.54878 2.0992 10.1243 2 12 2C13.8757 2 15.4512 2.0992 16.7499 2.38782C18.06 2.67897 19.1488 3.176 19.9864 4.01358C20.824 4.85116 21.321 5.94002 21.6122 7.25007C21.9008 8.54878 22 10.1243 22 12C22 13.8757 21.9008 15.4512 21.6122 16.7499C21.321 18.06 20.824 19.1488 19.9864 19.9864C19.1488 20.824 18.06 21.321 16.7499 21.6122C15.4512 21.9008 13.8757 22 12 22C10.1243 22 8.54878 21.9008 7.25007 21.6122C5.94002 21.321 4.85116 20.824 4.01358 19.9864C3.176 19.1488 2.67897 18.06 2.38782 16.7499C2.0992 15.4512 2 13.8757 2 12C2 10.1243 2.0992 8.54878 2.38782 7.25007C2.67897 5.94002 3.176 4.85116 4.01358 4.01358C4.85116 3.176 5.94002 2.67897 7.25007 2.38782Z"
-              fill="#3aac1b"
+              d="M30 0C13.458 0 0 13.458 0 30s13.458 30 30 30 30-13.458 30-30S46.542 0 30 0Z"
+              fill="#7cd76a"
             />
             <path
-              d="M7.25007 2.38782C8.54878 2.0992 10.1243 2 12 2C13.8757 2 15.4512 2.0992 16.7499 2.38782C18.06 2.67897 19.1488 3.176 19.9864 4.01358C20.824 4.85116 21.321 5.94002 21.6122 7.25007C21.9008 8.54878 22 10.1243 22 12C22 13.8757 21.9008 15.4512 21.6122 16.7499C21.321 18.06 20.824 19.1488 19.9864 19.9864C19.1488 20.824 18.06 21.321 16.7499 21.6122C15.4512 21.9008 13.8757 22 12 22C10.1243 22 8.54878 21.9008 7.25007 21.6122C5.94002 21.321 4.85116 20.824 4.01358 19.9864C3.176 19.1488 2.67897 18.06 2.38782 16.7499C2.0992 15.4512 2 13.8757 2 12C2 10.1243 2.0992 8.54878 2.38782 7.25007C2.67897 5.94002 3.176 4.85116 4.01358 4.01358C4.85116 3.176 5.94002 2.67897 7.25007 2.38782Z"
-              stroke="rgba(220,252,231,0.95)"
-              strokeWidth="1.2"
+              d="M30 1.25C14.148 1.25 1.25 14.148 1.25 30S14.148 58.75 30 58.75 58.75 45.852 58.75 30 45.852 1.25 30 1.25Z"
+              stroke="#e4fbdf"
+              strokeWidth="2.16"
             />
             <path
-              d="M9.1 7.8L9.1 16.2L17.8 12L9.1 7.8Z"
-              fill="#14532d"
-              opacity="0.92"
+              d="M45.563 30.826L23.563 45.826C23.394 45.941 23.197 46 23 46C22.84 46 22.679 45.962 22.533 45.884C22.205 45.711 22 45.371 22 45V15C22 14.629 22.205 14.289 22.533 14.116C22.861 13.942 23.257 13.966 23.564 14.174L45.564 29.174C45.836 29.36 46 29.669 46 30C46 30.331 45.836 30.64 45.563 30.826Z"
+              fill="#7cd76a"
+              stroke="#e4fbdf"
+              strokeWidth="2.16"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
           </svg>
           <span
@@ -583,13 +584,24 @@ export default function App() {
 
   if (active) {
     return (
-      <div className="fixed inset-0" style={{ backgroundColor: "#020617" }}>
+      <div
+        className="fixed inset-0"
+        style={{
+          backgroundColor: "#020617",
+          touchAction: "none",
+          overscrollBehavior: "none",
+        }}
+      >
         <iframe
           src={iframeSrc(active.url)}
           className="w-full h-full border-0"
           allow="autoplay; fullscreen; clipboard-write; encrypted-media; web-share"
           referrerPolicy="no-referrer-when-downgrade"
           title={active.game.name}
+          style={{
+            touchAction: "none",
+            overscrollBehavior: "none",
+          }}
         />
         {active.game.thirdParty && <PartnerIframeChrome url={active.url} />}
         {!embeddedOverlayActive ? (
