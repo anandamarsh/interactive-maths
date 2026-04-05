@@ -152,7 +152,7 @@ function getCurriculumColor(level: TeachingLevel) {
 }
 
 function splitLevelLabel(label: string) {
-  const match = label.match(/^(Level\s+\d+:)\s*(.+)$/i);
+  const match = label.match(/^(Level\s+\d+):\s*(.+)$/i);
   if (!match) return { prefix: label, body: "" };
   return { prefix: match[1], body: match[2] };
 }
@@ -206,31 +206,23 @@ function CurriculumTag({ level, compact = false }: { level: TeachingLevel; compa
 
 function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
   return (
-    <div className="mt-2 space-y-3">
+    <div className="mt-2 space-y-2">
       {levels.map((level, index) => {
         const { prefix, body } = splitLevelLabel(level.label);
         const bodyText = titleCaseLevelBody(body);
 
         return (
-          <div
-            key={`${level.label}-${index}`}
-            className="rounded-xl border px-4 py-4"
-            style={{
-              borderColor: "rgba(148, 163, 184, 0.18)",
-              background: "rgba(15, 23, 42, 0.38)",
-            }}
-          >
-            <p className="text-sm text-slate-200 leading-relaxed">
-              <span style={{ color: "#4ade80" }} className="font-semibold">{prefix}</span>
-              {level.syllabusCode ? (
-                <>
-                  {" "}
-                  <CurriculumTag level={level} compact />
-                </>
-              ) : null}
-              {bodyText ? <> <span style={{ color: "#4ade80" }}>-</span> {bodyText}</> : null}
-            </p>
-          </div>
+          <p key={`${level.label}-${index}`} className="text-sm text-slate-200 leading-relaxed pl-3" style={{ textIndent: "-0.75rem", paddingLeft: "0.75rem" }}>
+            <span style={{ color: "#4ade80" }}>–</span>{" "}
+            <span style={{ color: "#4ade80" }} className="font-semibold">{prefix}</span>
+            {level.syllabusCode ? (
+              <>
+                {"  "}
+                <CurriculumTag level={level} compact />
+              </>
+            ) : null}
+            {bodyText ? <> {bodyText}</> : null}
+          </p>
         );
       })}
     </div>
@@ -264,7 +256,12 @@ function ReferencesSection({ levels }: { levels: TeachingLevel[] }) {
                   <div className="flex min-w-[112px] flex-col items-start gap-1.5">
                     <CurriculumTag level={level} />
                     {level.stageLabel ? (
-                      <span className="text-[11px] font-semibold tracking-wide text-slate-400">{level.stageLabel}</span>
+                      <span
+                        className="text-[11px] font-semibold tracking-wide"
+                        style={{ color: getCurriculumColor(level).text }}
+                      >
+                        {level.stageLabel}
+                      </span>
                     ) : null}
                   </div>
                 </td>
