@@ -232,6 +232,9 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
 function ReferencesSection({ levels }: { levels: TeachingLevel[] }) {
   return (
     <div className="space-y-2">
+      <p className="text-xs font-bold tracking-wider mb-3" style={{ color: "#38bdf8" }}>
+        REFERENCES:
+      </p>
       <div className="space-y-2">
         {levels.map((level, index) => (
           <div key={`reference-${level.syllabusCode ?? level.label}-${index}`} className="flex items-start gap-2 pl-1 text-sm text-slate-200">
