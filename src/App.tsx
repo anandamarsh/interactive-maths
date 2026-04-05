@@ -231,7 +231,7 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
 
 function ReferencesSection({ levels }: { levels: TeachingLevel[] }) {
   return (
-    <div className="space-y-2">
+    <div className="mt-6 space-y-2">
       <p className="text-xs font-bold tracking-wider mb-3" style={{ color: "#38bdf8" }}>
         REFERENCES:
       </p>
