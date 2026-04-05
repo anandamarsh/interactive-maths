@@ -21,9 +21,10 @@ export interface GameManifest {
 
 export interface TeachingLevel {
   label: string;
-  yearLabel?: string;
+  stageLabel?: string;
   syllabusCode?: string;
   syllabusUrl?: string;
+  syllabusDescription?: string;
 }
 
 export interface InlineGameEntry {
@@ -97,20 +98,24 @@ function normalizeTeachingLevel(level: unknown): TeachingLevel | null {
   if (level === null || typeof level !== "object") return null;
   const item = level as {
     label?: unknown;
-    yearLabel?: unknown;
+    stageLabel?: unknown;
     syllabusCode?: unknown;
     syllabusUrl?: unknown;
+    syllabusDescription?: unknown;
   };
   const label = typeof item.label === "string" ? item.label.trim() : "";
   if (!label) return null;
-  const yearLabel = typeof item.yearLabel === "string" ? item.yearLabel.trim() : "";
+  const stageLabel = typeof item.stageLabel === "string" ? item.stageLabel.trim() : "";
   const syllabusCode = typeof item.syllabusCode === "string" ? item.syllabusCode.trim() : "";
   const syllabusUrl = typeof item.syllabusUrl === "string" ? item.syllabusUrl.trim() : "";
+  const syllabusDescription =
+    typeof item.syllabusDescription === "string" ? item.syllabusDescription.trim() : "";
   return {
     label,
-    yearLabel: yearLabel || undefined,
+    stageLabel: stageLabel || undefined,
     syllabusCode: syllabusCode || undefined,
     syllabusUrl: syllabusUrl || undefined,
+    syllabusDescription: syllabusDescription || undefined,
   };
 }
 

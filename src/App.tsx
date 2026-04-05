@@ -93,6 +93,19 @@ type DescriptionSection = {
   lines: string[];
 };
 
+const YEAR_COLOR_SCENE: Record<number, { border: string; bg: string; text: string }> = {
+  1: { border: "rgba(244, 114, 182, 0.48)", bg: "rgba(244, 114, 182, 0.16)", text: "#f9a8d4" },
+  2: { border: "rgba(251, 146, 60, 0.48)", bg: "rgba(251, 146, 60, 0.16)", text: "#fdba74" },
+  3: { border: "rgba(250, 204, 21, 0.48)", bg: "rgba(250, 204, 21, 0.16)", text: "#fde047" },
+  4: { border: "rgba(132, 204, 22, 0.48)", bg: "rgba(132, 204, 22, 0.16)", text: "#bef264" },
+  5: { border: "rgba(34, 197, 94, 0.48)", bg: "rgba(34, 197, 94, 0.16)", text: "#86efac" },
+  6: { border: "rgba(20, 184, 166, 0.48)", bg: "rgba(20, 184, 166, 0.16)", text: "#5eead4" },
+  7: { border: "rgba(56, 189, 248, 0.48)", bg: "rgba(56, 189, 248, 0.16)", text: "#7dd3fc" },
+  8: { border: "rgba(96, 165, 250, 0.48)", bg: "rgba(96, 165, 250, 0.16)", text: "#93c5fd" },
+  9: { border: "rgba(167, 139, 250, 0.48)", bg: "rgba(167, 139, 250, 0.16)", text: "#c4b5fd" },
+  10: { border: "rgba(248, 113, 113, 0.48)", bg: "rgba(248, 113, 113, 0.16)", text: "#fca5a5" },
+};
+
 function splitDescriptionSections(text: string): DescriptionSection[] {
   const lines = text.split("\n");
   const sections: DescriptionSection[] = [];
@@ -121,20 +134,73 @@ function splitDescriptionSections(text: string): DescriptionSection[] {
   return sections;
 }
 
-function formatSyllabusMeta(level: TeachingLevel) {
-  return [level.yearLabel, level.syllabusCode].filter(Boolean).join(" - ");
+function getStageYears(level: TeachingLevel) {
+  const match = level.stageLabel?.match(/Years?\s+(\d+)(?:-(\d+))?/i);
+  if (!match) return [];
+  const start = Number(match[1]);
+  const end = Number(match[2] ?? match[1]);
+  return Number.isFinite(start) && Number.isFinite(end) ? [start, end] : [];
+}
+
+function getCurriculumColor(level: TeachingLevel) {
+  const [startYear] = getStageYears(level);
+  return YEAR_COLOR_SCENE[startYear] ?? {
+    border: "rgba(148, 163, 184, 0.28)",
+    bg: "rgba(148, 163, 184, 0.12)",
+    text: "#cbd5e1",
+  };
+}
+
+function splitLevelLabel(label: string) {
+  const match = label.match(/^(Level\s+\d+:)\s*(.+)$/i);
+  if (!match) return { prefix: label, body: "" };
+  return { prefix: match[1], body: match[2] };
 }
 
 function isLiveSyllabusUrl(url: string | undefined) {
   return typeof url === "string" && /^https?:\/\//.test(url);
 }
 
+function CurriculumTag({ level, compact = false }: { level: TeachingLevel; compact?: boolean }) {
+  if (!level.syllabusCode) return null;
+
+  const liveUrl = isLiveSyllabusUrl(level.syllabusUrl) ? level.syllabusUrl : undefined;
+  const colors = getCurriculumColor(level);
+  const className = compact
+    ? "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-bold tracking-wide"
+    : "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-wide";
+  const style = {
+    borderColor: colors.border,
+    background: colors.bg,
+    color: colors.text,
+  };
+
+  if (!liveUrl) {
+    return (
+      <span className={className} style={style}>
+        {level.syllabusCode}
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={liveUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${className} transition-transform hover:scale-[1.02]`}
+      style={style}
+    >
+      {level.syllabusCode}
+    </a>
+  );
+}
+
 function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
   return (
     <div className="mt-2 space-y-3">
       {levels.map((level, index) => {
-        const syllabusMeta = formatSyllabusMeta(level);
-        const liveUrl = isLiveSyllabusUrl(level.syllabusUrl) ? level.syllabusUrl : undefined;
+        const { prefix, body } = splitLevelLabel(level.label);
 
         return (
           <div
@@ -145,33 +211,16 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
               background: "rgba(15, 23, 42, 0.38)",
             }}
           >
-            <p className="text-sm text-slate-200 leading-relaxed">{level.label}</p>
-            {syllabusMeta ? (
-              liveUrl ? (
-                <a
-                  href={liveUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide text-slate-300 transition-colors hover:text-slate-100"
-                  style={{
-                    borderColor: "rgba(148, 163, 184, 0.24)",
-                    background: "rgba(15, 23, 42, 0.42)",
-                  }}
-                >
-                  <span className="truncate">{syllabusMeta}</span>
-                </a>
-              ) : (
-                <span
-                  className="mt-2 inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide text-slate-400"
-                  style={{
-                    borderColor: "rgba(148, 163, 184, 0.18)",
-                    background: "rgba(15, 23, 42, 0.32)",
-                  }}
-                >
-                  <span className="truncate">{syllabusMeta}</span>
-                </span>
-              )
-            ) : null}
+            <p className="text-sm text-slate-200 leading-relaxed">
+              <span style={{ color: "#4ade80" }} className="font-semibold">{prefix}</span>
+              {body ? <> {body}</> : null}
+              {level.syllabusCode ? (
+                <>
+                  {" "}
+                  <CurriculumTag level={level} compact />
+                </>
+              ) : null}
+            </p>
           </div>
         );
       })}
@@ -179,9 +228,44 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
   );
 }
 
+function ReferencesSection({ levels }: { levels: TeachingLevel[] }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-bold tracking-wider mb-1" style={{ color: "#38bdf8" }}>
+        REFERENCES:
+      </p>
+      {levels.map((level, index) => (
+        <div
+          key={`reference-${level.syllabusCode ?? level.label}-${index}`}
+          className="rounded-xl border px-3 py-3"
+          style={{
+            borderColor: "rgba(148, 163, 184, 0.16)",
+            background: "rgba(2, 6, 23, 0.32)",
+          }}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <CurriculumTag level={level} />
+            {level.stageLabel ? (
+              <span className="text-[11px] font-semibold tracking-wide text-slate-400">{level.stageLabel}</span>
+            ) : null}
+          </div>
+          {level.syllabusDescription ? (
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">{level.syllabusDescription}</p>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function renderDescription(text: string, teachesLevels: TeachingLevel[]) {
   return splitDescriptionSections(text).flatMap((section, sectionIndex) => {
     const result: React.ReactNode[] = [];
+
+    if (section.heading === "TECH:" && teachesLevels.length > 0) {
+      result.push(<ReferencesSection key={`references-${sectionIndex}`} levels={teachesLevels} />);
+      result.push(<div key={`references-gap-${sectionIndex}`} className="h-4" />);
+    }
 
     if (section.heading !== null) {
       result.push(
