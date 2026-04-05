@@ -157,6 +157,14 @@ function splitLevelLabel(label: string) {
   return { prefix: match[1], body: match[2] };
 }
 
+function titleCaseLevelBody(body: string) {
+  if (!body) return "";
+  const normalized = body.charAt(0).toUpperCase() + body.slice(1);
+  return normalized.replace(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)(\s+)/, (_match, words, spacing) => {
+    return `${words}${spacing}`;
+  });
+}
+
 function isLiveSyllabusUrl(url: string | undefined) {
   return typeof url === "string" && /^https?:\/\//.test(url);
 }
@@ -201,11 +209,12 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
     <div className="mt-2 space-y-3">
       {levels.map((level, index) => {
         const { prefix, body } = splitLevelLabel(level.label);
+        const bodyText = titleCaseLevelBody(body);
 
         return (
           <div
             key={`${level.label}-${index}`}
-            className="rounded-xl border px-3 py-3"
+            className="rounded-xl border px-4 py-4"
             style={{
               borderColor: "rgba(148, 163, 184, 0.18)",
               background: "rgba(15, 23, 42, 0.38)",
@@ -213,13 +222,13 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
           >
             <p className="text-sm text-slate-200 leading-relaxed">
               <span style={{ color: "#4ade80" }} className="font-semibold">{prefix}</span>
-              {body ? <> {body}</> : null}
               {level.syllabusCode ? (
                 <>
                   {" "}
                   <CurriculumTag level={level} compact />
                 </>
               ) : null}
+              {bodyText ? <> <span style={{ color: "#4ade80" }}>-</span> {bodyText}</> : null}
             </p>
           </div>
         );
@@ -234,26 +243,39 @@ function ReferencesSection({ levels }: { levels: TeachingLevel[] }) {
       <p className="text-xs font-bold tracking-wider mb-1" style={{ color: "#38bdf8" }}>
         REFERENCES:
       </p>
-      {levels.map((level, index) => (
-        <div
-          key={`reference-${level.syllabusCode ?? level.label}-${index}`}
-          className="rounded-xl border px-3 py-3"
-          style={{
-            borderColor: "rgba(148, 163, 184, 0.16)",
-            background: "rgba(2, 6, 23, 0.32)",
-          }}
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <CurriculumTag level={level} />
-            {level.stageLabel ? (
-              <span className="text-[11px] font-semibold tracking-wide text-slate-400">{level.stageLabel}</span>
-            ) : null}
-          </div>
-          {level.syllabusDescription ? (
-            <p className="mt-2 text-sm leading-relaxed text-slate-300">{level.syllabusDescription}</p>
-          ) : null}
-        </div>
-      ))}
+      <div
+        className="overflow-hidden rounded-xl border"
+        style={{
+          borderColor: "rgba(148, 163, 184, 0.16)",
+          background: "rgba(2, 6, 23, 0.28)",
+        }}
+      >
+        <table className="w-full border-collapse text-left">
+          <tbody>
+            {levels.map((level, index) => (
+              <tr
+                key={`reference-${level.syllabusCode ?? level.label}-${index}`}
+                className="align-top"
+                style={{
+                  borderTop: index === 0 ? "none" : "1px solid rgba(148, 163, 184, 0.12)",
+                }}
+              >
+                <td className="w-[1%] whitespace-nowrap px-3 py-3 sm:px-4">
+                  <div className="flex min-w-[112px] flex-col items-start gap-1.5">
+                    <CurriculumTag level={level} />
+                    {level.stageLabel ? (
+                      <span className="text-[11px] font-semibold tracking-wide text-slate-400">{level.stageLabel}</span>
+                    ) : null}
+                  </div>
+                </td>
+                <td className="px-3 py-3 text-sm leading-relaxed text-slate-300 sm:px-4">
+                  {level.syllabusDescription ?? ""}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
