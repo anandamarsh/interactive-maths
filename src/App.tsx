@@ -93,17 +93,13 @@ type DescriptionSection = {
   lines: string[];
 };
 
-const YEAR_COLOR_SCENE: Record<number, { border: string; bg: string; text: string }> = {
-  1: { border: "rgba(244, 114, 182, 0.48)", bg: "rgba(244, 114, 182, 0.16)", text: "#f9a8d4" },
-  2: { border: "rgba(251, 146, 60, 0.48)", bg: "rgba(251, 146, 60, 0.16)", text: "#fdba74" },
-  3: { border: "rgba(250, 204, 21, 0.48)", bg: "rgba(250, 204, 21, 0.16)", text: "#fde047" },
-  4: { border: "rgba(132, 204, 22, 0.48)", bg: "rgba(132, 204, 22, 0.16)", text: "#bef264" },
-  5: { border: "rgba(34, 197, 94, 0.48)", bg: "rgba(34, 197, 94, 0.16)", text: "#86efac" },
-  6: { border: "rgba(20, 184, 166, 0.48)", bg: "rgba(20, 184, 166, 0.16)", text: "#5eead4" },
-  7: { border: "rgba(56, 189, 248, 0.48)", bg: "rgba(56, 189, 248, 0.16)", text: "#7dd3fc" },
-  8: { border: "rgba(96, 165, 250, 0.48)", bg: "rgba(96, 165, 250, 0.16)", text: "#93c5fd" },
-  9: { border: "rgba(167, 139, 250, 0.48)", bg: "rgba(167, 139, 250, 0.16)", text: "#c4b5fd" },
-  10: { border: "rgba(248, 113, 113, 0.48)", bg: "rgba(248, 113, 113, 0.16)", text: "#fca5a5" },
+const STAGE_COLOR_SCENE: Record<string, { border: string; bg: string; text: string }> = {
+  "Stage 1": { border: "rgba(244, 114, 182, 0.48)", bg: "rgba(244, 114, 182, 0.16)", text: "#f9a8d4" },
+  "Stage 2": { border: "rgba(250, 204, 21, 0.48)", bg: "rgba(250, 204, 21, 0.16)", text: "#fde047" },
+  "Stage 3": { border: "rgba(96, 165, 250, 0.48)", bg: "rgba(96, 165, 250, 0.16)", text: "#93c5fd" },
+  "Stage 4": { border: "rgba(167, 139, 250, 0.48)", bg: "rgba(167, 139, 250, 0.16)", text: "#c4b5fd" },
+  "Stage 5": { border: "rgba(248, 113, 113, 0.48)", bg: "rgba(248, 113, 113, 0.16)", text: "#fca5a5" },
+  "Stage 6": { border: "rgba(251, 146, 60, 0.48)", bg: "rgba(251, 146, 60, 0.16)", text: "#fdba74" },
 };
 
 function splitDescriptionSections(text: string): DescriptionSection[] {
@@ -134,17 +130,14 @@ function splitDescriptionSections(text: string): DescriptionSection[] {
   return sections;
 }
 
-function getStageYears(level: TeachingLevel) {
-  const match = level.stageLabel?.match(/Years?\s+(\d+)(?:-(\d+))?/i);
-  if (!match) return [];
-  const start = Number(match[1]);
-  const end = Number(match[2] ?? match[1]);
-  return Number.isFinite(start) && Number.isFinite(end) ? [start, end] : [];
+function getStageKey(level: TeachingLevel) {
+  const match = level.stageLabel?.match(/Stage\s+\d+/i);
+  return match?.[0] ?? "";
 }
 
 function getCurriculumColor(level: TeachingLevel) {
-  const [startYear] = getStageYears(level);
-  return YEAR_COLOR_SCENE[startYear] ?? {
+  const stageKey = getStageKey(level);
+  return STAGE_COLOR_SCENE[stageKey] ?? {
     border: "rgba(148, 163, 184, 0.28)",
     bg: "rgba(148, 163, 184, 0.12)",
     text: "#cbd5e1",
