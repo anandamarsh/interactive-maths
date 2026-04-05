@@ -218,8 +218,8 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
           >
             <span style={{ color: "#4ade80" }} className="leading-6">–</span>
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 leading-relaxed">
-              <span style={{ color: "#4ade80" }} className="font-semibold">{prefix}</span>
               {level.syllabusCode ? <CurriculumTag level={level} compact /> : null}
+              <span style={{ color: "#4ade80" }} className="font-semibold">{prefix}</span>
               {bodyText ? <span>{bodyText}</span> : null}
             </div>
           </div>
