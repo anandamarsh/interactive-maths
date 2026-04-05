@@ -206,7 +206,7 @@ function CurriculumTag({ level, compact = false }: { level: TeachingLevel; compa
 
 function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
   return (
-    <div className="mt-2 space-y-2">
+    <div className="space-y-2">
       {levels.map((level, index) => {
         const { prefix, body } = splitLevelLabel(level.label);
         const bodyText = titleCaseLevelBody(body);
@@ -231,11 +231,8 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
 
 function ReferencesSection({ levels }: { levels: TeachingLevel[] }) {
   return (
-    <div className="space-y-3">
-      <p className="text-xs font-bold tracking-wider mb-1" style={{ color: "#38bdf8" }}>
-        REFERENCES:
-      </p>
-      <div className="pt-1 space-y-2">
+    <div className="space-y-2">
+      <div className="space-y-2">
         {levels.map((level, index) => (
           <div key={`reference-${level.syllabusCode ?? level.label}-${index}`} className="flex items-start gap-2 pl-1 text-sm text-slate-200">
             <span style={{ color: "#4ade80" }} className="leading-6">–</span>
@@ -266,7 +263,7 @@ function renderDescription(text: string, teachesLevels: TeachingLevel[]) {
 
     if (section.heading !== null) {
       result.push(
-        <p key={`heading-${sectionIndex}`} className="text-xs font-bold tracking-wider mb-1 mt-4 first:mt-0" style={{ color: "#38bdf8" }}>
+        <p key={`heading-${sectionIndex}`} className="text-xs font-bold tracking-wider mb-3 mt-6 first:mt-0" style={{ color: "#38bdf8" }}>
           {section.heading}
           {section.headingRest && <span className="font-normal tracking-normal text-slate-300"> {section.headingRest}</span>}
         </p>
