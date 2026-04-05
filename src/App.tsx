@@ -967,7 +967,7 @@ export default function App() {
                   <div className="flex flex-col gap-1">
                     <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
                     {drawer.buildStamp && !drawer.thirdParty && (
-                      <p className="text-[10px] leading-none text-sky-300/80">
+                      <p className="text-[10px] leading-none text-sky-300/10 transition-colors hover:text-sky-300/80">
                         Build {drawer.buildStamp}
                       </p>
                     )}
@@ -1087,7 +1087,7 @@ export default function App() {
                 <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
                   <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
                   {drawer.buildStamp && !drawer.thirdParty && (
-                    <p className="pb-0.5 text-[10px] leading-none text-sky-300/80">
+                    <p className="pb-0.5 text-[10px] leading-none text-sky-300/10 transition-colors hover:text-sky-300/80">
                       Build {drawer.buildStamp}
                     </p>
                   )}
