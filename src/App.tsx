@@ -175,7 +175,7 @@ function CurriculumTag({ level, compact = false }: { level: TeachingLevel; compa
   const liveUrl = isLiveSyllabusUrl(level.syllabusUrl) ? level.syllabusUrl : undefined;
   const colors = getCurriculumColor(level);
   const className = compact
-    ? "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-bold tracking-wide"
+    ? "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-wide align-middle"
     : "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-wide";
   const style = {
     borderColor: colors.border,
@@ -212,12 +212,16 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
         const bodyText = titleCaseLevelBody(body);
 
         return (
-          <p key={`${level.label}-${index}`} className="text-sm text-slate-200 leading-relaxed pl-3" style={{ textIndent: "-0.75rem", paddingLeft: "0.75rem" }}>
+          <p
+            key={`${level.label}-${index}`}
+            className="text-sm text-slate-200 leading-relaxed pl-5"
+            style={{ textIndent: "-0.95rem", paddingLeft: "1.1rem" }}
+          >
             <span style={{ color: "#4ade80" }}>–</span>{" "}
             <span style={{ color: "#4ade80" }} className="font-semibold">{prefix}</span>
             {level.syllabusCode ? (
               <>
-                {"  "}
+                <span className="inline-block w-2" aria-hidden="true" />
                 <CurriculumTag level={level} compact />
               </>
             ) : null}
@@ -288,7 +292,7 @@ function renderDescription(text: string, teachesLevels: TeachingLevel[]) {
 
     if (section.heading !== null) {
       result.push(
-        <p key={`heading-${sectionIndex}`} className="text-xs font-bold tracking-wider mb-1" style={{ color: "#38bdf8" }}>
+        <p key={`heading-${sectionIndex}`} className="text-xs font-bold tracking-wider mb-1 mt-4 first:mt-0" style={{ color: "#38bdf8" }}>
           {section.heading}
           {section.headingRest && <span className="font-normal tracking-normal text-slate-300"> {section.headingRest}</span>}
         </p>
