@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SocialComments, SocialShare } from "./components/Social";
 import { GameIcon } from "./components/GameIcon";
-import type { Game, GameListEntry } from "./games";
+import type { Game, GameListEntry, TeachingLevel } from "./games";
 import { loadGamesList } from "./games";
 import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
 
@@ -63,39 +63,142 @@ const SKILL_COLORS = [
   { bg: "rgba(251,146,60,0.15)",  color: "#fb923c" },
 ];
 
-function renderDescription(text: string) {
-  const lines = text.split("\n");
+function renderDescriptionLines(lines: string[], keyPrefix: string) {
   const result: React.ReactNode[] = [];
   let key = 0;
 
   for (const line of lines) {
     if (!line.trim()) {
-      result.push(<div key={key++} className="h-3" />);
-    } else if (/^[A-Z][A-Z\s]+:/.test(line)) {
-      // Section heading like "WHAT IT DOES:" or "TECH: ..."
-      const colon = line.indexOf(":");
-      const heading = line.slice(0, colon + 1);
-      const rest = line.slice(colon + 1);
-      result.push(
-        <p key={key++} className="text-xs font-bold tracking-wider mb-1" style={{ color: "#38bdf8" }}>
-          {heading}{rest && <span className="font-normal tracking-normal text-slate-300"> {rest.trim()}</span>}
-        </p>
-      );
+      result.push(<div key={`${keyPrefix}-${key++}`} className="h-3" />);
     } else if (line.startsWith("- ")) {
       result.push(
-        <p key={key++} className="text-sm text-slate-300 leading-relaxed pl-3" style={{ textIndent: "-0.75rem", paddingLeft: "0.75rem" }}>
+        <p key={`${keyPrefix}-${key++}`} className="text-sm text-slate-300 leading-relaxed pl-3" style={{ textIndent: "-0.75rem", paddingLeft: "0.75rem" }}>
           <span style={{ color: "#4ade80" }}>–</span> {line.slice(2)}
         </p>
       );
     } else {
       result.push(
-        <p key={key++} className="text-sm text-slate-300 leading-relaxed">
+        <p key={`${keyPrefix}-${key++}`} className="text-sm text-slate-300 leading-relaxed">
           {line}
         </p>
       );
     }
   }
   return result;
+}
+
+type DescriptionSection = {
+  heading: string | null;
+  headingRest: string;
+  lines: string[];
+};
+
+function splitDescriptionSections(text: string): DescriptionSection[] {
+  const lines = text.split("\n");
+  const sections: DescriptionSection[] = [];
+  let current: DescriptionSection = { heading: null, headingRest: "", lines: [] };
+
+  const pushCurrent = () => {
+    if (current.heading !== null || current.lines.length > 0) sections.push(current);
+  };
+
+  for (const line of lines) {
+    if (/^[A-Z][A-Z\s]+:/.test(line)) {
+      pushCurrent();
+      const colon = line.indexOf(":");
+      current = {
+        heading: line.slice(0, colon + 1),
+        headingRest: line.slice(colon + 1).trim(),
+        lines: [],
+      };
+      continue;
+    }
+
+    current.lines.push(line);
+  }
+
+  pushCurrent();
+  return sections;
+}
+
+function formatSyllabusMeta(level: TeachingLevel) {
+  return [level.yearLabel, level.syllabusCode].filter(Boolean).join(" - ");
+}
+
+function isLiveSyllabusUrl(url: string | undefined) {
+  return typeof url === "string" && /^https?:\/\//.test(url);
+}
+
+function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
+  return (
+    <div className="mt-2 space-y-3">
+      {levels.map((level, index) => {
+        const syllabusMeta = formatSyllabusMeta(level);
+        const liveUrl = isLiveSyllabusUrl(level.syllabusUrl) ? level.syllabusUrl : undefined;
+
+        return (
+          <div
+            key={`${level.label}-${index}`}
+            className="rounded-xl border px-3 py-3"
+            style={{
+              borderColor: "rgba(148, 163, 184, 0.18)",
+              background: "rgba(15, 23, 42, 0.38)",
+            }}
+          >
+            <p className="text-sm text-slate-200 leading-relaxed">{level.label}</p>
+            {syllabusMeta ? (
+              liveUrl ? (
+                <a
+                  href={liveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide text-slate-300 transition-colors hover:text-slate-100"
+                  style={{
+                    borderColor: "rgba(148, 163, 184, 0.24)",
+                    background: "rgba(15, 23, 42, 0.42)",
+                  }}
+                >
+                  <span className="truncate">{syllabusMeta}</span>
+                </a>
+              ) : (
+                <span
+                  className="mt-2 inline-flex max-w-full items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide text-slate-400"
+                  style={{
+                    borderColor: "rgba(148, 163, 184, 0.18)",
+                    background: "rgba(15, 23, 42, 0.32)",
+                  }}
+                >
+                  <span className="truncate">{syllabusMeta}</span>
+                </span>
+              )
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function renderDescription(text: string, teachesLevels: TeachingLevel[]) {
+  return splitDescriptionSections(text).flatMap((section, sectionIndex) => {
+    const result: React.ReactNode[] = [];
+
+    if (section.heading !== null) {
+      result.push(
+        <p key={`heading-${sectionIndex}`} className="text-xs font-bold tracking-wider mb-1" style={{ color: "#38bdf8" }}>
+          {section.heading}
+          {section.headingRest && <span className="font-normal tracking-normal text-slate-300"> {section.headingRest}</span>}
+        </p>
+      );
+    }
+
+    if (section.heading === "WHAT IT TEACHES:" && teachesLevels.length > 0) {
+      result.push(<WhatItTeachesLevels key={`teaches-${sectionIndex}`} levels={teachesLevels} />);
+      return result;
+    }
+
+    return result.concat(renderDescriptionLines(section.lines, `section-${sectionIndex}`));
+  });
 }
 
 /** Gold ribbon — obvious partner marker, black text */
@@ -993,7 +1096,7 @@ export default function App() {
 
             {/* Row 2: description */}
             <div className="shrink-0 p-6">
-              {renderDescription(drawer.description)}
+              {renderDescription(drawer.description, drawer.teachesLevels)}
             </div>
           </div>
           </div>

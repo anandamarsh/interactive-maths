@@ -14,8 +14,16 @@ export interface GameManifest {
   skills?: string[];
   githubUrl?: string;
   description?: string;
+  teachesLevels?: TeachingLevel[];
   /** Set true in remote manifest to mark partner games */
   thirdParty?: boolean;
+}
+
+export interface TeachingLevel {
+  label: string;
+  yearLabel?: string;
+  syllabusCode?: string;
+  syllabusUrl?: string;
 }
 
 export interface InlineGameEntry {
@@ -27,7 +35,16 @@ export interface InlineGameEntry {
   openInNewTab?: boolean;
 }
 
-export type GameListEntry = string | InlineGameEntry;
+export interface RemoteGameOverrideEntry {
+  playUrl: string;
+  manifestOverrides: GameManifest;
+  /** Card / drawer image; defaults to favicon discovery for host */
+  imageUrl?: string;
+  /** Skip iframe; open playUrl in a new tab */
+  openInNewTab?: boolean;
+}
+
+export type GameListEntry = string | InlineGameEntry | RemoteGameOverrideEntry;
 
 export interface Game {
   id: string;
@@ -40,6 +57,7 @@ export interface Game {
   skills: string[];
   githubUrl?: string;
   description: string;
+  teachesLevels: TeachingLevel[];
   /** Card + drawer art (first-party: omit → favicon.svg on game origin) */
   imageUrl?: string;
   thirdParty: boolean;
@@ -67,6 +85,12 @@ export function isInlineGameEntry(entry: unknown): entry is InlineGameEntry {
   if (entry === null || typeof entry !== "object") return false;
   const o = entry as Record<string, unknown>;
   return typeof o.playUrl === "string" && o.manifest !== null && typeof o.manifest === "object";
+}
+
+export function isRemoteGameOverrideEntry(entry: unknown): entry is RemoteGameOverrideEntry {
+  if (entry === null || typeof entry !== "object") return false;
+  const o = entry as Record<string, unknown>;
+  return typeof o.playUrl === "string" && o.manifestOverrides !== null && typeof o.manifestOverrides === "object";
 }
 
 export function normalizeGame(
@@ -97,6 +121,25 @@ export function normalizeGame(
     skills: Array.isArray(raw.skills) ? raw.skills.map(String) : [],
     githubUrl: typeof raw.githubUrl === "string" ? raw.githubUrl.trim() || undefined : undefined,
     description: cleanedDescription,
+    teachesLevels: Array.isArray(raw.teachesLevels)
+      ? raw.teachesLevels
+          .map((level) => {
+            if (level === null || typeof level !== "object") return null;
+            const item = level as Record<string, unknown>;
+            const label = typeof item.label === "string" ? item.label.trim() : "";
+            if (!label) return null;
+            const yearLabel = typeof item.yearLabel === "string" ? item.yearLabel.trim() : "";
+            const syllabusCode = typeof item.syllabusCode === "string" ? item.syllabusCode.trim() : "";
+            const syllabusUrl = typeof item.syllabusUrl === "string" ? item.syllabusUrl.trim() : "";
+            return {
+              label,
+              yearLabel: yearLabel || undefined,
+              syllabusCode: syllabusCode || undefined,
+              syllabusUrl: syllabusUrl || undefined,
+            };
+          })
+          .filter((level): level is TeachingLevel => level !== null)
+      : [],
     imageUrl: raw.imageUrl,
     thirdParty: Boolean(raw.thirdParty),
     openInNewTab: Boolean(raw.openInNewTab),
@@ -126,6 +169,25 @@ export async function resolveGameEntry(entry: GameListEntry): Promise<Game | nul
         screenshots: resolveAssetUrls(m.screenshots, entry),
         thirdParty: Boolean(m.thirdParty),
         openInNewTab: false,
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  if (isRemoteGameOverrideEntry(entry)) {
+    try {
+      const r = await fetch(base(entry.playUrl) + "manifest.json");
+      if (!r.ok) return null;
+      const m = (await r.json()) as GameManifest;
+      return normalizeGame({
+        ...m,
+        ...entry.manifestOverrides,
+        url: entry.playUrl,
+        imageUrl: entry.imageUrl?.trim() || undefined,
+        screenshots: resolveAssetUrls(entry.manifestOverrides.screenshots ?? m.screenshots, entry.playUrl),
+        thirdParty: Boolean(entry.manifestOverrides.thirdParty ?? m.thirdParty),
+        openInNewTab: Boolean(entry.openInNewTab),
       });
     } catch {
       return null;

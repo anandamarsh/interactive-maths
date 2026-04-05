@@ -1,6 +1,54 @@
 [
-  "https://maths-distance-calculator.vercel.app/",
-  "https://maths-angle-explorer.vercel.app/",
+  {
+    "playUrl": "https://maths-distance-calculator.vercel.app/",
+    "manifestOverrides": {
+      "teachesLevels": [
+        {
+          "label": "Level 1: adding decimal distances across multiple road segments to find a total journey distance",
+          "yearLabel": "Years 5-6",
+          "syllabusCode": "TODO_CODE",
+          "syllabusUrl": "TODO_OFFICIAL_NSW_SYLLABUS_URL"
+        },
+        {
+          "label": "Level 2: subtraction of decimals with a missing segment shown as \"?\"",
+          "yearLabel": "Years 5-6",
+          "syllabusCode": "TODO_CODE",
+          "syllabusUrl": "TODO_OFFICIAL_NSW_SYLLABUS_URL"
+        },
+        {
+          "label": "Level 3: comparison of two distances from a common point with three scaffolded input rows",
+          "yearLabel": "Years 5-6",
+          "syllabusCode": "TODO_CODE",
+          "syllabusUrl": "TODO_OFFICIAL_NSW_SYLLABUS_URL"
+        }
+      ]
+    }
+  },
+  {
+    "playUrl": "https://maths-angle-explorer.vercel.app/",
+    "manifestOverrides": {
+      "teachesLevels": [
+        {
+          "label": "Level 1: recognising and targeting acute, right, obtuse, straight and reflex angles by sight",
+          "yearLabel": "Years 7-8",
+          "syllabusCode": "TODO_CODE",
+          "syllabusUrl": "TODO_OFFICIAL_NSW_SYLLABUS_URL"
+        },
+        {
+          "label": "Level 2: missing angles in sector diagrams that sum to 90°, 180°, or 360°",
+          "yearLabel": "Years 7-8",
+          "syllabusCode": "TODO_CODE",
+          "syllabusUrl": "TODO_OFFICIAL_NSW_SYLLABUS_URL"
+        },
+        {
+          "label": "Level 3 (coming soon): angle reasoning without visual hints using pure calculation questions",
+          "yearLabel": "Years 7-8",
+          "syllabusCode": "TODO_CODE",
+          "syllabusUrl": "TODO_OFFICIAL_NSW_SYLLABUS_URL"
+        }
+      ]
+    }
+  },
   {
     "playUrl": "https://locicomplex.com/",
     "manifest": {
