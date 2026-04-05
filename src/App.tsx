@@ -175,7 +175,7 @@ function CurriculumTag({ level, compact = false }: { level: TeachingLevel; compa
   const liveUrl = isLiveSyllabusUrl(level.syllabusUrl) ? level.syllabusUrl : undefined;
   const colors = getCurriculumColor(level);
   const className = compact
-    ? "relative -top-px inline-flex items-center justify-center rounded-full border px-2.5 py-1 mr-2 text-[11px] leading-none font-bold tracking-wide align-middle"
+    ? "inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-[11px] leading-none font-bold tracking-wide"
     : "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-wide";
   const style = {
     borderColor: colors.border,
@@ -212,21 +212,17 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
         const bodyText = titleCaseLevelBody(body);
 
         return (
-          <p
+          <div
             key={`${level.label}-${index}`}
-            className="text-sm text-slate-200 leading-relaxed pl-5"
-            style={{ textIndent: "-0.95rem", paddingLeft: "1.1rem" }}
+            className="flex items-start gap-2 pl-1 text-sm text-slate-200"
           >
-            <span style={{ color: "#4ade80" }}>–</span>{" "}
-            <span style={{ color: "#4ade80" }} className="font-semibold">{prefix}</span>
-            {level.syllabusCode ? (
-              <>
-                <span className="inline-block w-3" aria-hidden="true" />
-                <CurriculumTag level={level} compact />
-              </>
-            ) : null}
-            {bodyText ? <> {bodyText}</> : null}
-          </p>
+            <span style={{ color: "#4ade80" }} className="leading-6">–</span>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 leading-relaxed">
+              <span style={{ color: "#4ade80" }} className="font-semibold">{prefix}</span>
+              {level.syllabusCode ? <CurriculumTag level={level} compact /> : null}
+              {bodyText ? <span>{bodyText}</span> : null}
+            </div>
+          </div>
         );
       })}
     </div>
