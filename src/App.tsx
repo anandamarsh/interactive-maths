@@ -204,6 +204,40 @@ function CurriculumTag({ level, compact = false }: { level: TeachingLevel; compa
   );
 }
 
+function CurriculumReferenceTag({ level }: { level: TeachingLevel }) {
+  if (!level.syllabusCode) return null;
+
+  const liveUrl = isLiveSyllabusUrl(level.syllabusUrl) ? level.syllabusUrl : undefined;
+  const colors = getCurriculumColor(level);
+  const label = level.stageLabel ? `${level.syllabusCode}  ${level.stageLabel}` : level.syllabusCode;
+  const className = "inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-[11px] leading-none font-bold tracking-wide";
+  const style = {
+    borderColor: colors.border,
+    background: colors.bg,
+    color: colors.text,
+  };
+
+  if (!liveUrl) {
+    return (
+      <span className={className} style={style}>
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={liveUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${className} transition-transform hover:scale-[1.02]`}
+      style={style}
+    >
+      {label}
+    </a>
+  );
+}
+
 function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
   return (
     <div className="mt-2 space-y-2">
@@ -253,16 +287,8 @@ function ReferencesSection({ levels }: { levels: TeachingLevel[] }) {
                 }}
               >
                 <td className="w-[1%] whitespace-nowrap px-3 py-3 sm:px-4">
-                  <div className="flex min-w-[112px] flex-col items-start gap-1.5">
-                    <CurriculumTag level={level} />
-                    {level.stageLabel ? (
-                      <span
-                        className="text-[11px] font-semibold tracking-wide"
-                        style={{ color: getCurriculumColor(level).text }}
-                      >
-                        {level.stageLabel}
-                      </span>
-                    ) : null}
+                  <div className="flex min-w-[180px] items-start">
+                    <CurriculumReferenceTag level={level} />
                   </div>
                 </td>
                 <td className="px-3 py-3 text-sm leading-relaxed text-slate-300 sm:px-4">
