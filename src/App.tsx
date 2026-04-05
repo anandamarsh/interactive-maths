@@ -96,10 +96,10 @@ type DescriptionSection = {
 const STAGE_COLOR_SCENE: Record<string, { border: string; bg: string; text: string }> = {
   "Stage 1": { border: "rgba(244, 114, 182, 0.48)", bg: "rgba(244, 114, 182, 0.16)", text: "#f9a8d4" },
   "Stage 2": { border: "rgba(250, 204, 21, 0.48)", bg: "rgba(250, 204, 21, 0.16)", text: "#fde047" },
-  "Stage 3": { border: "rgba(96, 165, 250, 0.48)", bg: "rgba(96, 165, 250, 0.16)", text: "#93c5fd" },
+  "Stage 3": { border: "rgba(251, 146, 60, 0.48)", bg: "rgba(251, 146, 60, 0.16)", text: "#fdba74" },
   "Stage 4": { border: "rgba(167, 139, 250, 0.48)", bg: "rgba(167, 139, 250, 0.16)", text: "#c4b5fd" },
   "Stage 5": { border: "rgba(248, 113, 113, 0.48)", bg: "rgba(248, 113, 113, 0.16)", text: "#fca5a5" },
-  "Stage 6": { border: "rgba(251, 146, 60, 0.48)", bg: "rgba(251, 146, 60, 0.16)", text: "#fdba74" },
+  "Stage 6": { border: "rgba(245, 158, 11, 0.48)", bg: "rgba(245, 158, 11, 0.16)", text: "#fcd34d" },
 };
 
 function splitDescriptionSections(text: string): DescriptionSection[] {
