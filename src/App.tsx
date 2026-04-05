@@ -235,7 +235,7 @@ function ReferencesSection({ levels }: { levels: TeachingLevel[] }) {
       <p className="text-xs font-bold tracking-wider mb-1" style={{ color: "#38bdf8" }}>
         REFERENCES:
       </p>
-      <div className="space-y-2">
+      <div className="pt-1 space-y-2">
         {levels.map((level, index) => (
           <div key={`reference-${level.syllabusCode ?? level.label}-${index}`} className="flex items-start gap-2 pl-1 text-sm text-slate-200">
             <span style={{ color: "#4ade80" }} className="leading-6">–</span>
