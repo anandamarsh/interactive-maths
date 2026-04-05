@@ -175,7 +175,7 @@ function CurriculumTag({ level, compact = false }: { level: TeachingLevel; compa
   const liveUrl = isLiveSyllabusUrl(level.syllabusUrl) ? level.syllabusUrl : undefined;
   const colors = getCurriculumColor(level);
   const className = compact
-    ? "inline-flex items-center rounded-full border px-2.5 py-1 mr-2 text-[11px] font-bold tracking-wide align-middle"
+    ? "relative -top-px inline-flex items-center justify-center rounded-full border px-2.5 py-1 mr-2 text-[11px] leading-none font-bold tracking-wide align-middle"
     : "inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-wide";
   const style = {
     borderColor: colors.border,
