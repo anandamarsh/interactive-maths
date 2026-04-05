@@ -93,6 +93,27 @@ export function isRemoteGameOverrideEntry(entry: unknown): entry is RemoteGameOv
   return typeof o.playUrl === "string" && o.manifestOverrides !== null && typeof o.manifestOverrides === "object";
 }
 
+function normalizeTeachingLevel(level: unknown): TeachingLevel | null {
+  if (level === null || typeof level !== "object") return null;
+  const item = level as {
+    label?: unknown;
+    yearLabel?: unknown;
+    syllabusCode?: unknown;
+    syllabusUrl?: unknown;
+  };
+  const label = typeof item.label === "string" ? item.label.trim() : "";
+  if (!label) return null;
+  const yearLabel = typeof item.yearLabel === "string" ? item.yearLabel.trim() : "";
+  const syllabusCode = typeof item.syllabusCode === "string" ? item.syllabusCode.trim() : "";
+  const syllabusUrl = typeof item.syllabusUrl === "string" ? item.syllabusUrl.trim() : "";
+  return {
+    label,
+    yearLabel: yearLabel || undefined,
+    syllabusCode: syllabusCode || undefined,
+    syllabusUrl: syllabusUrl || undefined,
+  };
+}
+
 export function normalizeGame(
   raw: GameManifest & {
     url: string;
@@ -121,25 +142,10 @@ export function normalizeGame(
     skills: Array.isArray(raw.skills) ? raw.skills.map(String) : [],
     githubUrl: typeof raw.githubUrl === "string" ? raw.githubUrl.trim() || undefined : undefined,
     description: cleanedDescription,
-    teachesLevels: Array.isArray(raw.teachesLevels)
-      ? raw.teachesLevels
-          .map((level) => {
-            if (level === null || typeof level !== "object") return null;
-            const item = level as Record<string, unknown>;
-            const label = typeof item.label === "string" ? item.label.trim() : "";
-            if (!label) return null;
-            const yearLabel = typeof item.yearLabel === "string" ? item.yearLabel.trim() : "";
-            const syllabusCode = typeof item.syllabusCode === "string" ? item.syllabusCode.trim() : "";
-            const syllabusUrl = typeof item.syllabusUrl === "string" ? item.syllabusUrl.trim() : "";
-            return {
-              label,
-              yearLabel: yearLabel || undefined,
-              syllabusCode: syllabusCode || undefined,
-              syllabusUrl: syllabusUrl || undefined,
-            };
-          })
-          .filter((level): level is TeachingLevel => level !== null)
-      : [],
+    teachesLevels: Array.isArray(raw.teachesLevels) ? raw.teachesLevels.flatMap((level) => {
+      const normalizedLevel = normalizeTeachingLevel(level);
+      return normalizedLevel ? [normalizedLevel] : [];
+    }) : [],
     imageUrl: raw.imageUrl,
     thirdParty: Boolean(raw.thirdParty),
     openInNewTab: Boolean(raw.openInNewTab),
