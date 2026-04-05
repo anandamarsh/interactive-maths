@@ -204,40 +204,6 @@ function CurriculumTag({ level, compact = false }: { level: TeachingLevel; compa
   );
 }
 
-function CurriculumReferenceTag({ level }: { level: TeachingLevel }) {
-  if (!level.syllabusCode) return null;
-
-  const liveUrl = isLiveSyllabusUrl(level.syllabusUrl) ? level.syllabusUrl : undefined;
-  const colors = getCurriculumColor(level);
-  const label = level.stageLabel ? `${level.syllabusCode}  ${level.stageLabel}` : level.syllabusCode;
-  const className = "inline-flex items-center justify-center rounded-full border px-3 py-1.5 text-[11px] leading-none font-bold tracking-wide";
-  const style = {
-    borderColor: colors.border,
-    background: colors.bg,
-    color: colors.text,
-  };
-
-  if (!liveUrl) {
-    return (
-      <span className={className} style={style}>
-        {label}
-      </span>
-    );
-  }
-
-  return (
-    <a
-      href={liveUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`${className} transition-transform hover:scale-[1.02]`}
-      style={style}
-    >
-      {label}
-    </a>
-  );
-}
-
 function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
   return (
     <div className="mt-2 space-y-2">
@@ -269,35 +235,21 @@ function ReferencesSection({ levels }: { levels: TeachingLevel[] }) {
       <p className="text-xs font-bold tracking-wider mb-1" style={{ color: "#38bdf8" }}>
         REFERENCES:
       </p>
-      <div
-        className="overflow-hidden rounded-xl border"
-        style={{
-          borderColor: "rgba(148, 163, 184, 0.16)",
-          background: "rgba(2, 6, 23, 0.28)",
-        }}
-      >
-        <table className="w-full border-collapse text-left">
-          <tbody>
-            {levels.map((level, index) => (
-              <tr
-                key={`reference-${level.syllabusCode ?? level.label}-${index}`}
-                className="align-top"
-                style={{
-                  borderTop: index === 0 ? "none" : "1px solid rgba(148, 163, 184, 0.12)",
-                }}
-              >
-                <td className="w-[1%] whitespace-nowrap px-3 py-3 sm:px-4">
-                  <div className="flex min-w-[180px] items-start">
-                    <CurriculumReferenceTag level={level} />
-                  </div>
-                </td>
-                <td className="px-3 py-3 text-sm leading-relaxed text-slate-300 sm:px-4">
-                  {level.syllabusDescription ?? ""}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-2">
+        {levels.map((level, index) => (
+          <div key={`reference-${level.syllabusCode ?? level.label}-${index}`} className="flex items-start gap-2 pl-1 text-sm text-slate-200">
+            <span style={{ color: "#4ade80" }} className="leading-6">–</span>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 leading-relaxed">
+              {level.syllabusCode ? <CurriculumTag level={level} compact /> : null}
+              {level.stageLabel ? (
+                <span style={{ color: getCurriculumColor(level).text }} className="font-semibold">
+                  {level.stageLabel}
+                </span>
+              ) : null}
+              {level.syllabusDescription ? <span>{level.syllabusDescription}</span> : null}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
