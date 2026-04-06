@@ -852,8 +852,8 @@ export default function App() {
       </div>
       <div className="max-w-5xl mx-auto w-full">
         <header className="flex flex-col items-center text-center mb-10">
-          <p className="text-[1.125rem] font-bold tracking-[0.25em] uppercase text-sky-400 mb-1">
-            Interactive Maths
+          <p className="text-[1.125rem] font-bold tracking-[0.25em] text-sky-400 mb-1">
+            See the Maths you Do
           </p>
 
           <input

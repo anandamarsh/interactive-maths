@@ -1,6 +1,6 @@
 {
-  "name": "Interactive Maths",
-  "short_name": "Interactive Maths",
+  "name": "See the Maths you Do",
+  "short_name": "See the Maths you Do",
   "description": "Arcade-style maths games",
   "id": "./",
   "start_url": "./",
