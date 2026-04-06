@@ -285,6 +285,39 @@ const partnerTagGoldStyle: CSSProperties = {
   fontWeight: 800,
 };
 
+/** Violet ribbon — starter/template game marker */
+const starterTagStyle: CSSProperties = {
+  background: "linear-gradient(180deg, #a78bfa 0%, #7c3aed 55%, #6d28d9 100%)",
+  color: "white",
+  border: "1px solid rgba(109, 40, 217, 0.35)",
+  boxShadow:
+    "0 2px 0 rgba(109, 40, 217, 0.45), 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.35)",
+  fontWeight: 800,
+};
+
+/** Derive a short year label from a stageLabel string, e.g. "Stage 3 (Years 5-6)" → "Yr 5-6" */
+function getYearStripLabel(stageLabel: string): string {
+  const yearsMatch = stageLabel.match(/Years?\s+(\d+-\d+)/i);
+  if (yearsMatch) return `Yr ${yearsMatch[1]}`;
+  if (/kindergarten/i.test(stageLabel)) return "K";
+  return "";
+}
+
+/** Map NSW stage to a solid colour for the diagonal year strip */
+function getStageColor(stageLabel: string): string {
+  if (/kindergarten/i.test(stageLabel)) return "#7c3aed"; // violet — Early Stage 1
+  const m = stageLabel.match(/Stage\s+(\d+)/i);
+  if (!m) return "#475569";
+  switch (m[1]) {
+    case "1": return "#0891b2"; // cyan 600 — Stage 1
+    case "2": return "#2563eb"; // blue 600 — Stage 2
+    case "3": return "#059669"; // emerald 600 — Stage 3
+    case "4": return "#d97706"; // amber 600 — Stage 4
+    case "5": return "#dc2626"; // red 600 — Stage 5
+    default:  return "#475569";
+  }
+}
+
 /** Top-right overlay when a partner game is embedded */
 function PartnerIframeChrome({ url }: { url: string }) {
   return (
@@ -841,14 +874,51 @@ export default function App() {
                   (e.currentTarget as HTMLElement).style.boxShadow = "none";
                 }}
               >
-                {g.thirdParty && (
+                {/* Corner badge: Partner or Starter */}
+                {g.thirdParty ? (
                   <span
                     className="pointer-events-none absolute top-0 right-0 z-20 rounded-bl-lg rounded-tr-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
                     style={partnerTagGoldStyle}
                   >
                     Partner
                   </span>
-                )}
+                ) : g.tags.includes("starter") ? (
+                  <span
+                    className="pointer-events-none absolute top-0 right-0 z-20 rounded-bl-lg rounded-tr-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
+                    style={starterTagStyle}
+                  >
+                    Starter
+                  </span>
+                ) : null}
+
+                {/* Diagonal year strip — top-right corner, colour-coded by stage */}
+                {(() => {
+                  const sl = g.teachesLevels[0]?.stageLabel ?? "";
+                  const label = getYearStripLabel(sl);
+                  if (!label) return null;
+                  return (
+                    <div
+                      className="pointer-events-none absolute z-[15]"
+                      style={{
+                        top: "18px",
+                        right: "-28px",
+                        width: "108px",
+                        transform: "rotate(45deg)",
+                        background: getStageColor(sl),
+                        color: "white",
+                        fontSize: "9px",
+                        fontWeight: 800,
+                        textAlign: "center",
+                        padding: "4px 0",
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {label}
+                    </div>
+                  );
+                })()}
+
                 <GameIcon game={g} className="w-32 h-32 object-contain" />
                 <div className="px-1">
                   <div className="text-white font-bold text-sm leading-tight">{g.name}</div>
