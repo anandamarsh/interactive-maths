@@ -65,6 +65,22 @@ export interface Game {
   openInNewTab: boolean;
 }
 
+async function fetchJsonNoCache<T>(url: string): Promise<T> {
+  const response = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      "cache-control": "no-cache",
+      pragma: "no-cache",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url} (${response.status})`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export const base = (url: string) => url.replace(/\/?$/, "/");
 
 export function hostFromPlayUrl(playUrl: string): string | null {
@@ -171,9 +187,7 @@ function resolveAssetUrls(paths: string[] | undefined, gameUrl: string): string[
 export async function resolveGameEntry(entry: GameListEntry): Promise<Game | null> {
   if (typeof entry === "string") {
     try {
-      const r = await fetch(base(entry) + "manifest.json");
-      if (!r.ok) return null;
-      const m = (await r.json()) as GameManifest;
+      const m = await fetchJsonNoCache<GameManifest>(base(entry) + "manifest.json");
       return normalizeGame({
         ...m,
         url: entry,
@@ -188,9 +202,7 @@ export async function resolveGameEntry(entry: GameListEntry): Promise<Game | nul
 
   if (isRemoteGameOverrideEntry(entry)) {
     try {
-      const r = await fetch(base(entry.playUrl) + "manifest.json");
-      if (!r.ok) return null;
-      const m = (await r.json()) as GameManifest;
+      const m = await fetchJsonNoCache<GameManifest>(base(entry.playUrl) + "manifest.json");
       return normalizeGame({
         ...m,
         ...entry.manifestOverrides,
@@ -220,6 +232,18 @@ export async function resolveGameEntry(entry: GameListEntry): Promise<Game | nul
 export async function loadGamesList(entries: GameListEntry[]): Promise<Game[]> {
   const results = await Promise.all(entries.map((e) => resolveGameEntry(e)));
   return results.filter((g): g is Game => g !== null);
+}
+
+export async function loadGamesListProgressively(
+  entries: GameListEntry[],
+  onGame: (game: Game) => void,
+): Promise<void> {
+  await Promise.allSettled(
+    entries.map(async (entry) => {
+      const game = await resolveGameEntry(entry);
+      if (game) onGame(game);
+    }),
+  );
 }
 
 /** Ordered fallbacks for <img src> (first-party games only; partners use PartnerGameGlyph) */

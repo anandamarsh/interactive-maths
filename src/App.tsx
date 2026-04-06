@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { SocialComments, SocialShare } from "./components/Social";
 import { GameIcon } from "./components/GameIcon";
 import type { Game, GameListEntry, TeachingLevel } from "./games";
-import { loadGamesList } from "./games";
+import { loadGamesListProgressively } from "./games";
 import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
 
 const SHELL_GITHUB_URL = "https://github.com/anandamarsh/interactive-maths";
@@ -623,11 +623,44 @@ export default function App() {
 
   useEffect(() => {
     const listFile = import.meta.env.DEV ? "/games-local.json" : "/games.json";
-    fetch(listFile)
-      .then((r) => r.json())
-      .then((entries: GameListEntry[]) => loadGamesList(entries))
-      .then(setGames)
-      .finally(() => setLoading(false));
+    const controller = new AbortController();
+    let cancelled = false;
+
+    setGames([]);
+    setLoading(true);
+
+    fetch(listFile, {
+      cache: "no-store",
+      signal: controller.signal,
+      headers: {
+        "cache-control": "no-cache",
+        pragma: "no-cache",
+      },
+    })
+      .then((r) => {
+        if (!r.ok) {
+          throw new Error(`Failed to fetch ${listFile} (${r.status})`);
+        }
+        return r.json() as Promise<GameListEntry[]>;
+      })
+      .then(async (entries) => {
+        await loadGamesListProgressively(entries, (game) => {
+          if (cancelled) return;
+          setGames((current) => [...current, game]);
+        });
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        console.error("Failed to load games list:", error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, []);
 
   useEffect(() => {
@@ -873,11 +906,17 @@ export default function App() {
           />
         </header>
 
-        {loading ? (
-          <p className="text-slate-500">Loading games…</p>
-        ) : filtered.length === 0 ? (
+        {filtered.length === 0 ? (
+          loading ? (
+            <p className="text-slate-500">Loading games…</p>
+          ) : (
           <p className="text-slate-500">No games match "{query}".</p>
+          )
         ) : (
+          <>
+            {loading && (
+              <p className="mb-4 text-slate-500">Loading more games…</p>
+            )}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {filtered.map((g) => (
               <button
@@ -959,6 +998,7 @@ export default function App() {
               </button>
             ))}
           </div>
+          </>
         )}
       </div>
 

@@ -14,8 +14,6 @@ const APP_SHELL_ASSETS = [
   "./icon-1024.png",
   "./apple-touch-icon.png",
   "./apple-touch-icon-opaque-1024.png",
-  "./games.json",
-  "./games-local.json",
 ].map((asset) => new URL(asset, SCOPE_URL).pathname);
 
 function resolveAppUrl(candidate) {
@@ -74,6 +72,13 @@ self.addEventListener("fetch", (event) => {
   const requestUrl = new URL(event.request.url);
   const isSameOrigin = requestUrl.origin === self.location.origin;
   const wantsHtml = event.request.mode === "navigate";
+  const gamesListPath = new URL("./games.json", SCOPE_URL).pathname;
+  const gamesLocalListPath = new URL("./games-local.json", SCOPE_URL).pathname;
+
+  if (isSameOrigin && (requestUrl.pathname === gamesListPath || requestUrl.pathname === gamesLocalListPath)) {
+    event.respondWith(fetch(event.request, { cache: "no-store" }));
+    return;
+  }
 
   if (wantsHtml) {
     event.respondWith(
