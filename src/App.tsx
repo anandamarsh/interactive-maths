@@ -1005,17 +1005,9 @@ export default function App() {
           />
         </header>
 
-        {filteredSlots.length === 0 ? (
-          loading ? (
-            <p className="text-slate-500">Loading games…</p>
-          ) : (
+        {filteredSlots.length === 0 && !loading ? (
           <p className="text-slate-500">No games match "{query}".</p>
-          )
         ) : (
-          <>
-            {loading && (
-              <p className="mb-4 text-slate-500">Loading more games…</p>
-            )}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {filteredSlots.map((slot) => slot.game ? (
               <button
@@ -1099,7 +1091,6 @@ export default function App() {
               <LoadingCard key={slot.slotId} slot={slot} />
             ))}
           </div>
-          </>
         )}
       </div>
 
