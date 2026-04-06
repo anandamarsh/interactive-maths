@@ -1044,14 +1044,21 @@ export default function App() {
               <div className="flex items-center gap-4">
                 <GameIcon game={drawer} className="w-32 h-32 object-contain shrink-0" alt="" />
                 <div className="flex min-w-0 flex-1 flex-col gap-2 justify-center">
-                  {drawer.thirdParty && (
+                  {drawer.thirdParty ? (
                     <span
                       className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
                       style={partnerTagGoldStyle}
                     >
                       Partner site
                     </span>
-                  )}
+                  ) : drawer.tags.includes("starter") ? (
+                    <span
+                      className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
+                      style={starterTagStyle}
+                    >
+                      Starter app
+                    </span>
+                  ) : null}
                   <div className="flex flex-col gap-1">
                     <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
                     {drawer.buildStamp && !drawer.thirdParty && (
@@ -1149,14 +1156,21 @@ export default function App() {
             <div className="flex gap-5 p-4 pb-3 pt-10 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
               <GameIcon game={drawer} className="w-40 h-40 object-contain shrink-0" alt="" />
               <div className="flex flex-col gap-4 justify-center min-w-0">
-                {drawer.thirdParty && (
+                {drawer.thirdParty ? (
                   <span
                     className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
                     style={partnerTagGoldStyle}
                   >
                     Partner site
                   </span>
-                )}
+                ) : drawer.tags.includes("starter") ? (
+                  <span
+                    className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
+                    style={starterTagStyle}
+                  >
+                    Starter app
+                  </span>
+                ) : null}
                 <div className="flex flex-wrap gap-1">
                   {drawer.skills.slice(0, 4).map((s, i) => (
                     <span
