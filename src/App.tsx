@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SocialComments, SocialShare } from "./components/Social";
 import { GameIcon } from "./components/GameIcon";
-import type { Game, GameListEntry, TeachingLevel } from "./games";
-import { loadGamesListProgressively } from "./games";
+import type { Game, GameListEntry, GameSlot, TeachingLevel } from "./games";
+import { compareGameSlots, createGameSlot, loadGamesListProgressively } from "./games";
 import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
 
 const SHELL_GITHUB_URL = "https://github.com/anandamarsh/interactive-maths";
@@ -296,7 +296,7 @@ const starterTagStyle: CSSProperties = {
 };
 
 /** Merge all active teachesLevels into a single year label, e.g. [Stage 2 Yr 3-4, Stage 3 Yr 5-6] → "Yr 3-6" */
-function getYearStripLabel(levels: TeachingLevel[]): string {
+function deriveYearStripLabel(levels: TeachingLevel[]): string {
   // Exclude "coming soon" placeholder levels
   const active = levels.filter(lv => !/coming soon/i.test(lv.label));
   let minYear = Infinity, maxYear = -Infinity;
@@ -313,6 +313,10 @@ function getYearStripLabel(levels: TeachingLevel[]): string {
   if (minYear !== Infinity) return `Yr ${minYear}-${maxYear}`;
   if (hasKindergarten) return "Preschool";
   return "";
+}
+
+function getYearStripLabel(levels: TeachingLevel[], fallback = ""): string {
+  return fallback || deriveYearStripLabel(levels);
 }
 
 /** Colour from the lowest NSW stage across all teachesLevels */
@@ -335,6 +339,19 @@ function getStageColor(levels: TeachingLevel[]): string {
     case "5": return "#dc2626";
     default:  return "#475569";
   }
+}
+
+function getYearColor(yearLabel: string): string {
+  if (/preschool|kindergarten/i.test(yearLabel)) return "#7c3aed";
+  const rangeMatch = yearLabel.match(/(\d+)\s*-\s*(\d+)/);
+  const singleMatch = yearLabel.match(/(\d+)/);
+  const minYear = rangeMatch ? parseInt(rangeMatch[1], 10) : singleMatch ? parseInt(singleMatch[1], 10) : 99;
+  if (minYear <= 2) return "#0891b2";
+  if (minYear <= 4) return "#2563eb";
+  if (minYear <= 6) return "#059669";
+  if (minYear <= 8) return "#d97706";
+  if (minYear <= 10) return "#dc2626";
+  return "#475569";
 }
 
 /** Top-right overlay when a partner game is embedded */
@@ -596,8 +613,78 @@ function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name
   );
 }
 
+function LoadingCard({ slot }: { slot: GameSlot }) {
+  return (
+    <div
+      className="relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl p-2 pt-3 text-center"
+      style={{
+        background: "rgba(15, 23, 42, 0.68)",
+        border: "1px solid rgba(148, 163, 184, 0.28)",
+      }}
+      aria-label={`Loading ${slot.playUrl}`}
+    >
+      {slot.thirdParty ? (
+        <span
+          className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
+          style={partnerTagGoldStyle}
+        >
+          Partner
+        </span>
+      ) : null}
+
+      {slot.yearLabel ? (
+        <div
+          className="pointer-events-none absolute z-[15]"
+          style={{
+            top: "18px",
+            right: "-28px",
+            width: "108px",
+            transform: "rotate(45deg)",
+            background: getYearColor(slot.yearLabel),
+            color: "white",
+            fontSize: "9px",
+            fontWeight: 800,
+            textAlign: "center",
+            padding: "4px 0",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            opacity: 0.9,
+          }}
+        >
+          {slot.yearLabel}
+        </div>
+      ) : null}
+
+      <div
+        className="flex h-32 w-32 items-center justify-center rounded-[1.75rem]"
+        style={{
+          background: "linear-gradient(180deg, rgba(30,41,59,0.82) 0%, rgba(15,23,42,0.92) 100%)",
+          border: "1px solid rgba(148,163,184,0.18)",
+        }}
+      >
+        <div
+          className="h-10 w-10 rounded-full"
+          style={{
+            border: "3px solid rgba(148,163,184,0.18)",
+            borderTopColor: "#38bdf8",
+            animation: "spin 0.9s linear infinite",
+          }}
+        />
+      </div>
+
+      <div className="w-full px-2">
+        <div className="mx-auto h-4 w-24 rounded-full bg-slate-700/70" />
+      </div>
+      <div className="flex flex-wrap justify-center gap-1">
+        <span className="h-5 w-12 rounded-full bg-slate-800/80" />
+        <span className="h-5 w-16 rounded-full bg-slate-800/65" />
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
-  const [games, setGames] = useState<Game[]>([]);
+  const [slots, setSlots] = useState<GameSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<{ game: Game; url: string } | null>(null);
@@ -626,7 +713,7 @@ export default function App() {
     const controller = new AbortController();
     let cancelled = false;
 
-    setGames([]);
+    setSlots([]);
     setLoading(true);
 
     fetch(listFile, {
@@ -640,9 +727,22 @@ export default function App() {
         return r.json() as Promise<GameListEntry[]>;
       })
       .then(async (entries) => {
-        await loadGamesListProgressively(entries, (game) => {
+        const initialSlots = entries
+          .map((entry, index) => createGameSlot(entry, index))
+          .sort(compareGameSlots);
+
+        if (!cancelled) {
+          setSlots(initialSlots);
+        }
+
+        await loadGamesListProgressively(entries, (game, index) => {
           if (cancelled) return;
-          setGames((current) => [...current, game]);
+          const slotId = `${index}:${entries[index].playUrl.trim()}`;
+          setSlots((current) =>
+            current
+              .map((slot) => (slot.slotId === slotId ? { ...slot, game } : slot))
+              .sort(compareGameSlots),
+          );
         });
       })
       .catch((error) => {
@@ -784,8 +884,11 @@ export default function App() {
     setShowCommentsDrawer((open) => !open);
   }
 
-  const filtered = games.filter((g) => {
+  const filteredSlots = slots.filter((slot) => {
     const q = query.toLowerCase();
+    if (!q) return true;
+    if (!slot.game) return false;
+    const g = slot.game;
     return (
       !q ||
       g.name.toLowerCase().includes(q) ||
@@ -902,7 +1005,7 @@ export default function App() {
           />
         </header>
 
-        {filtered.length === 0 ? (
+        {filteredSlots.length === 0 ? (
           loading ? (
             <p className="text-slate-500">Loading games…</p>
           ) : (
@@ -914,10 +1017,10 @@ export default function App() {
               <p className="mb-4 text-slate-500">Loading more games…</p>
             )}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {filtered.map((g) => (
+            {filteredSlots.map((slot) => slot.game ? (
               <button
-                key={g.id}
-                onClick={() => openDrawer(g)}
+                key={slot.slotId}
+                onClick={() => openDrawer(slot.game!)}
                 className="relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl p-2 pt-3 text-center transition-all cursor-pointer"
                 style={{ background: "#0f172a", border: "1px solid #1e293b" }}
                 onMouseEnter={(e) => {
@@ -929,14 +1032,14 @@ export default function App() {
                 }}
               >
                 {/* Corner badge (top-left): Partner or Starter */}
-                {g.thirdParty ? (
+                {slot.game.thirdParty ? (
                   <span
                     className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
                     style={partnerTagGoldStyle}
                   >
                     Partner
                   </span>
-                ) : g.tags.includes("starter") ? (
+                ) : slot.game.tags.includes("starter") ? (
                   <span
                     className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
                     style={starterTagStyle}
@@ -947,7 +1050,7 @@ export default function App() {
 
                 {/* Diagonal year strip — top-right corner, colour-coded by stage */}
                 {(() => {
-                  const label = getYearStripLabel(g.teachesLevels);
+                  const label = getYearStripLabel(slot.game.teachesLevels, slot.game.yearLabel);
                   if (!label) return null;
                   return (
                     <div
@@ -957,7 +1060,7 @@ export default function App() {
                         right: "-28px",
                         width: "108px",
                         transform: "rotate(45deg)",
-                        background: getStageColor(g.teachesLevels),
+                        background: slot.game.teachesLevels.length > 0 ? getStageColor(slot.game.teachesLevels) : getYearColor(label),
                         color: "white",
                         fontSize: "9px",
                         fontWeight: 800,
@@ -972,12 +1075,12 @@ export default function App() {
                   );
                 })()}
 
-                <GameIcon game={g} className="w-32 h-32 object-contain" />
+                <GameIcon game={slot.game} className="w-32 h-32 object-contain" />
                 <div className="px-1">
-                  <div className="text-white font-bold text-sm leading-tight">{g.name}</div>
+                  <div className="text-white font-bold text-sm leading-tight">{slot.game.name}</div>
                 </div>
                 <div className="flex flex-wrap justify-center gap-1">
-                  {g.tags.slice(0, 2).map((t, i) => (
+                  {slot.game.tags.slice(0, 2).map((t, i) => (
                     <span
                       key={t}
                       className="text-[10px] px-2 py-0.5 rounded-full font-medium"
@@ -992,6 +1095,8 @@ export default function App() {
                   ))}
                 </div>
               </button>
+            ) : (
+              <LoadingCard key={slot.slotId} slot={slot} />
             ))}
           </div>
           </>

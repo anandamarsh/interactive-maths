@@ -1,9 +1,19 @@
 [
-  "https://maths-game-template.vercel.app/",
-  "https://maths-distance-calculator.vercel.app/",
-  "https://maths-angle-explorer.vercel.app/",
+  {
+    "playUrl": "https://maths-game-template.vercel.app/",
+    "year": "Preschool"
+  },
+  {
+    "playUrl": "https://maths-distance-calculator.vercel.app/",
+    "year": "5-6"
+  },
+  {
+    "playUrl": "https://maths-angle-explorer.vercel.app/",
+    "year": "3-6"
+  },
   {
     "playUrl": "https://locicomplex.com/",
+    "year": "9-10",
     "manifest": {
       "id": "locicomplex",
       "name": "Loci Complex",
