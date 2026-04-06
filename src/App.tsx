@@ -1086,7 +1086,9 @@ export default function App() {
                 <div className="flex flex-wrap justify-center gap-1">
                   {(() => {
                     const yearTag = getYearTag(slot.game);
-                    const allTags = yearTag ? [yearTag, ...slot.game.tags.filter((t) => t !== yearTag)] : slot.game.tags;
+                    const allTags = yearTag
+                      ? [yearTag, ...slot.game.tags.filter((t) => !/^\d+-\d+$/.test(t))]
+                      : slot.game.tags;
                     return allTags.slice(0, 2).map((t, i) => (
                       <span
                         key={t}
