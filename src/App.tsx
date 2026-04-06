@@ -632,10 +632,6 @@ export default function App() {
     fetch(listFile, {
       cache: "no-store",
       signal: controller.signal,
-      headers: {
-        "cache-control": "no-cache",
-        pragma: "no-cache",
-      },
     })
       .then((r) => {
         if (!r.ok) {

@@ -68,10 +68,6 @@ export interface Game {
 async function fetchJsonNoCache<T>(url: string): Promise<T> {
   const response = await fetch(url, {
     cache: "no-store",
-    headers: {
-      "cache-control": "no-cache",
-      pragma: "no-cache",
-    },
   });
 
   if (!response.ok) {
