@@ -295,11 +295,13 @@ const starterTagStyle: CSSProperties = {
   fontWeight: 800,
 };
 
-/** Merge all teachesLevels into a single year label, e.g. [Stage 2 Yr 3-4, Stage 3 Yr 5-6] → "Yr 3-6" */
+/** Merge all active teachesLevels into a single year label, e.g. [Stage 2 Yr 3-4, Stage 3 Yr 5-6] → "Yr 3-6" */
 function getYearStripLabel(levels: TeachingLevel[]): string {
+  // Exclude "coming soon" placeholder levels
+  const active = levels.filter(lv => !/coming soon/i.test(lv.label));
   let minYear = Infinity, maxYear = -Infinity;
   let hasKindergarten = false;
-  for (const lv of levels) {
+  for (const lv of active) {
     const sl = lv.stageLabel ?? "";
     if (/kindergarten/i.test(sl)) { hasKindergarten = true; continue; }
     const m = sl.match(/Years?\s+(\d+)-(\d+)/i);
@@ -309,7 +311,7 @@ function getYearStripLabel(levels: TeachingLevel[]): string {
     }
   }
   if (minYear !== Infinity) return `Yr ${minYear}-${maxYear}`;
-  if (hasKindergarten) return "K";
+  if (hasKindergarten) return "Preschool";
   return "";
 }
 
@@ -891,24 +893,24 @@ export default function App() {
                   (e.currentTarget as HTMLElement).style.boxShadow = "none";
                 }}
               >
-                {/* Corner badge: Partner or Starter */}
+                {/* Corner badge (top-left): Partner or Starter */}
                 {g.thirdParty ? (
                   <span
-                    className="pointer-events-none absolute top-0 right-0 z-20 rounded-bl-lg rounded-tr-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
+                    className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
                     style={partnerTagGoldStyle}
                   >
                     Partner
                   </span>
                 ) : g.tags.includes("starter") ? (
                   <span
-                    className="pointer-events-none absolute top-0 right-0 z-20 rounded-bl-lg rounded-tr-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
+                    className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
                     style={starterTagStyle}
                   >
                     Starter
                   </span>
                 ) : null}
 
-                {/* Diagonal year strip — top-left corner, colour-coded by stage */}
+                {/* Diagonal year strip — top-right corner, colour-coded by stage */}
                 {(() => {
                   const label = getYearStripLabel(g.teachesLevels);
                   if (!label) return null;
@@ -917,9 +919,9 @@ export default function App() {
                       className="pointer-events-none absolute z-[15]"
                       style={{
                         top: "18px",
-                        left: "-28px",
+                        right: "-28px",
                         width: "108px",
-                        transform: "rotate(-45deg)",
+                        transform: "rotate(45deg)",
                         background: getStageColor(g.teachesLevels),
                         color: "white",
                         fontSize: "9px",
