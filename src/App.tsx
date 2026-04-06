@@ -295,25 +295,42 @@ const starterTagStyle: CSSProperties = {
   fontWeight: 800,
 };
 
-/** Derive a short year label from a stageLabel string, e.g. "Stage 3 (Years 5-6)" → "Yr 5-6" */
-function getYearStripLabel(stageLabel: string): string {
-  const yearsMatch = stageLabel.match(/Years?\s+(\d+-\d+)/i);
-  if (yearsMatch) return `Yr ${yearsMatch[1]}`;
-  if (/kindergarten/i.test(stageLabel)) return "K";
+/** Merge all teachesLevels into a single year label, e.g. [Stage 2 Yr 3-4, Stage 3 Yr 5-6] → "Yr 3-6" */
+function getYearStripLabel(levels: TeachingLevel[]): string {
+  let minYear = Infinity, maxYear = -Infinity;
+  let hasKindergarten = false;
+  for (const lv of levels) {
+    const sl = lv.stageLabel ?? "";
+    if (/kindergarten/i.test(sl)) { hasKindergarten = true; continue; }
+    const m = sl.match(/Years?\s+(\d+)-(\d+)/i);
+    if (m) {
+      minYear = Math.min(minYear, parseInt(m[1]));
+      maxYear = Math.max(maxYear, parseInt(m[2]));
+    }
+  }
+  if (minYear !== Infinity) return `Yr ${minYear}-${maxYear}`;
+  if (hasKindergarten) return "K";
   return "";
 }
 
-/** Map NSW stage to a solid colour for the diagonal year strip */
-function getStageColor(stageLabel: string): string {
-  if (/kindergarten/i.test(stageLabel)) return "#7c3aed"; // violet — Early Stage 1
-  const m = stageLabel.match(/Stage\s+(\d+)/i);
+/** Colour from the lowest NSW stage across all teachesLevels */
+function getStageColor(levels: TeachingLevel[]): string {
+  const stageNum = (sl: string) => {
+    if (/kindergarten/i.test(sl)) return 0;
+    const m = sl.match(/Stage\s+(\d+)/i);
+    return m ? parseInt(m[1]) : 99;
+  };
+  const sorted = [...levels].sort((a, b) => stageNum(a.stageLabel ?? "") - stageNum(b.stageLabel ?? ""));
+  const sl = sorted[0]?.stageLabel ?? "";
+  if (/kindergarten/i.test(sl)) return "#7c3aed";
+  const m = sl.match(/Stage\s+(\d+)/i);
   if (!m) return "#475569";
   switch (m[1]) {
-    case "1": return "#0891b2"; // cyan 600 — Stage 1
-    case "2": return "#2563eb"; // blue 600 — Stage 2
-    case "3": return "#059669"; // emerald 600 — Stage 3
-    case "4": return "#d97706"; // amber 600 — Stage 4
-    case "5": return "#dc2626"; // red 600 — Stage 5
+    case "1": return "#0891b2";
+    case "2": return "#2563eb";
+    case "3": return "#059669";
+    case "4": return "#d97706";
+    case "5": return "#dc2626";
     default:  return "#475569";
   }
 }
@@ -891,20 +908,19 @@ export default function App() {
                   </span>
                 ) : null}
 
-                {/* Diagonal year strip — top-right corner, colour-coded by stage */}
+                {/* Diagonal year strip — top-left corner, colour-coded by stage */}
                 {(() => {
-                  const sl = g.teachesLevels[0]?.stageLabel ?? "";
-                  const label = getYearStripLabel(sl);
+                  const label = getYearStripLabel(g.teachesLevels);
                   if (!label) return null;
                   return (
                     <div
                       className="pointer-events-none absolute z-[15]"
                       style={{
                         top: "18px",
-                        right: "-28px",
+                        left: "-28px",
                         width: "108px",
-                        transform: "rotate(45deg)",
-                        background: getStageColor(sl),
+                        transform: "rotate(-45deg)",
+                        background: getStageColor(g.teachesLevels),
                         color: "white",
                         fontSize: "9px",
                         fontWeight: 800,
