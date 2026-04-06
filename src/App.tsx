@@ -43,6 +43,18 @@ function getLaunchLevels(game: Game): number[] {
   return [];
 }
 
+function getYearTag(game: Game): string | null {
+  const host = hostName(game.url) ?? "";
+  if (host.includes("maths-angle-explorer")) return "3-7";
+  if (host.includes("maths-distance-calculator")) return "3-7";
+  return null;
+}
+
+function formatTag(tag: string): string {
+  if (/^\d+-\d+$/.test(tag)) return `Year ${tag}`;
+  return tag;
+}
+
 function withLevelParam(url: string, level: number): string {
   try {
     const next = new URL(url);
@@ -1072,19 +1084,23 @@ export default function App() {
                   <div className="text-white font-bold text-sm leading-tight">{slot.game.name}</div>
                 </div>
                 <div className="flex flex-wrap justify-center gap-1">
-                  {slot.game.tags.slice(0, 2).map((t, i) => (
-                    <span
-                      key={t}
-                      className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                      style={{
-                        background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
-                        color: SKILL_COLORS[i % SKILL_COLORS.length].color,
-                        border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
-                      }}
-                    >
-                      {t}
-                    </span>
-                  ))}
+                  {(() => {
+                    const yearTag = getYearTag(slot.game);
+                    const allTags = yearTag ? [yearTag, ...slot.game.tags.filter((t) => t !== yearTag)] : slot.game.tags;
+                    return allTags.slice(0, 2).map((t, i) => (
+                      <span
+                        key={t}
+                        className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                        style={{
+                          background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
+                          color: SKILL_COLORS[i % SKILL_COLORS.length].color,
+                          border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
+                        }}
+                      >
+                        {formatTag(t)}
+                      </span>
+                    ));
+                  })()}
                 </div>
               </button>
             ) : (

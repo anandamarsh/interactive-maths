@@ -10,8 +10,8 @@ import {
   WhatsappShareButton,
 } from "react-share";
 
-const SHARE_TITLE = "Check out this maths game on Interactive Maths!";
-const SHARE_URL = "https://interactive-maths.vercel.app/";
+const SHARE_TITLE = "Check out this maths game on CMaths!";
+const SHARE_URL = "https://cmaths.com/";
 const DEFAULT_DISCUSSIT_URL = import.meta.env.PROD
   ? "https://discussit-widget.vercel.app"
   : "http://localhost:5001";
@@ -48,8 +48,18 @@ export function SocialShare() {
   );
 }
 
+/** Map current domain to canonical URL so comments stay consistent across domain changes */
+function getCanonicalPageUrl(): string {
+  if (typeof window === "undefined") return SHARE_URL;
+  const url = new URL(window.location.href);
+  url.hostname = "interactive-maths.vercel.app";
+  url.port = "";
+  url.protocol = "https:";
+  return url.toString();
+}
+
 export function SocialComments({ composeRequest, reloadRequest }: { composeRequest: number; reloadRequest: number }) {
-  const pageUrl = typeof window !== "undefined" ? window.location.href : SHARE_URL;
+  const pageUrl = getCanonicalPageUrl();
   const iframeUrl = `${LOCAL_DISCUSSIT_URL}/?url=${encodeURIComponent(pageUrl)}&theme=dark`;
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
