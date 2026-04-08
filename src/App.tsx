@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { SocialComments, SocialShare } from "./components/Social";
 import { GameIcon } from "./components/GameIcon";
 import type { Game, GameListEntry, GameSlot, TeachingLevel } from "./games";
@@ -6,6 +6,8 @@ import { compareGameSlots, createGameSlot, loadGamesListProgressively } from "./
 import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
 
 const SHELL_GITHUB_URL = "https://github.com/anandamarsh/interactive-maths";
+const SHELL_YOUTUBE_URL = "https://www.youtube.com/@SeeMaths0";
+const SHELL_YOUTUBE_ICON_URL = "/youtube-circle-logo-svgrepo-com.svg";
 
 function GitHubIcon({ className = "" }: { className?: string }) {
   return (
@@ -430,15 +432,6 @@ function LevelLaunchButtons({
   );
 }
 
-function shuffle<T>(items: T[]): T[] {
-  const next = [...items];
-  for (let i = next.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [next[i], next[j]] = [next[j], next[i]];
-  }
-  return next;
-}
-
 const notificationPreferenceKey = "interactive-maths:comment-notifications";
 
 function readNotificationPreference() {
@@ -446,182 +439,82 @@ function readNotificationPreference() {
   return window.localStorage.getItem(notificationPreferenceKey) ?? "off";
 }
 
-function ScreenshotCarousel({ screenshots, name }: { screenshots: string[]; name: string }) {
-  const trackRef = useRef<HTMLDivElement | null>(null);
-  const ordered = useMemo(() => shuffle(screenshots), [screenshots]);
-  const [allImagesLoaded, setAllImagesLoaded] = useState(false);
-  const autoplayCancelledRef = useRef(false);
-  const dragStartXRef = useRef<number | null>(null);
+function toYouTubeEmbedUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const videoId = parsed.hostname.includes("youtu.be")
+      ? parsed.pathname.replace(/^\/+/, "")
+      : parsed.searchParams.get("v") ?? (parsed.pathname.startsWith("/shorts/") ? parsed.pathname.split("/")[2] : null);
+    if (!videoId) return null;
+    return `https://www.youtube.com/embed/${videoId}`;
+  } catch {
+    return null;
+  }
+}
+
+function ScreenshotCarousel({ screenshots, videoUrl, name }: { screenshots: string[]; videoUrl?: string; name: string }) {
+  const media = useMemo(() => {
+    const items: Array<{ kind: "video"; src: string } | { kind: "image"; src: string }> = [];
+    const embedUrl = videoUrl ? toYouTubeEmbedUrl(videoUrl) : null;
+    if (embedUrl) items.push({ kind: "video", src: embedUrl });
+    for (const screenshot of screenshots) items.push({ kind: "image", src: screenshot });
+    return items;
+  }, [screenshots, videoUrl]);
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    setAllImagesLoaded(false);
-    autoplayCancelledRef.current = false;
-  }, [ordered]);
+    setLoadedImages({});
+  }, [screenshots, videoUrl]);
 
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track || ordered.length === 0) return;
-
-    let rafId = 0;
-    let cancelled = false;
-    let direction = 1;
-    let lastTime = 0;
-
-    const stop = () => {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = 0;
-      }
-    };
-
-    const step = (time: number) => {
-      if (cancelled) return;
-      const delta = lastTime ? Math.min(time - lastTime, 64) : 16;
-      lastTime = time;
-
-      const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
-      if (maxScroll <= 0) return;
-
-      const next = track.scrollLeft + (0.35 * direction * delta / 16);
-      if (next >= maxScroll) {
-        track.scrollTo(maxScroll, 0);
-        direction = -1;
-      } else if (next <= 0) {
-        track.scrollTo(0, 0);
-        direction = 1;
-      } else {
-        track.scrollTo(next, 0);
-      }
-      rafId = requestAnimationFrame(step);
-    };
-
-    const start = () => {
-      stop();
-      if (autoplayCancelledRef.current) return;
-      direction = 1;
-      lastTime = 0;
-      track.scrollTo(0, 0);
-      if (track.scrollWidth <= track.clientWidth) return;
-      rafId = requestAnimationFrame(step);
-    };
-
-    const images = Array.from(track.querySelectorAll("img"));
-    let loadedCount = 0;
-
-    const markImageReady = () => {
-      loadedCount += 1;
-      if (loadedCount >= images.length) {
-        setAllImagesLoaded(true);
-        start();
-      }
-    };
-
-    for (const image of images) {
-      if (image.complete) {
-        markImageReady();
-      } else {
-        image.addEventListener("load", markImageReady, { once: true });
-        image.addEventListener("error", markImageReady, { once: true });
-      }
-    }
-
-    const observer = new ResizeObserver(() => {
-      if (allImagesLoaded) start();
-    });
-    observer.observe(track);
-
-    const cancelAutoplay = () => {
-      autoplayCancelledRef.current = true;
-      stop();
-    };
-
-    const resetDrag = () => {
-      dragStartXRef.current = null;
-    };
-
-    const onPointerDown = (event: PointerEvent) => {
-      dragStartXRef.current = event.clientX;
-    };
-
-    const onPointerMove = (event: PointerEvent) => {
-      if (dragStartXRef.current === null) return;
-      if (Math.abs(event.clientX - dragStartXRef.current) > 6) {
-        cancelAutoplay();
-        resetDrag();
-      }
-    };
-
-    const onTouchStart = (event: TouchEvent) => {
-      dragStartXRef.current = event.touches[0]?.clientX ?? null;
-    };
-
-    const onTouchMove = (event: TouchEvent) => {
-      const currentX = event.touches[0]?.clientX;
-      if (dragStartXRef.current === null || currentX === undefined) return;
-      if (Math.abs(currentX - dragStartXRef.current) > 6) {
-        cancelAutoplay();
-        resetDrag();
-      }
-    };
-
-    track.addEventListener("pointerdown", onPointerDown);
-    track.addEventListener("pointermove", onPointerMove);
-    track.addEventListener("pointerup", resetDrag);
-    track.addEventListener("pointercancel", resetDrag);
-    track.addEventListener("touchstart", onTouchStart, { passive: true });
-    track.addEventListener("touchmove", onTouchMove, { passive: true });
-    track.addEventListener("touchend", resetDrag);
-    track.addEventListener("touchcancel", resetDrag);
-    track.addEventListener("wheel", cancelAutoplay, { passive: true });
-
-    return () => {
-      cancelled = true;
-      stop();
-      lastTime = 0;
-      observer.disconnect();
-      track.removeEventListener("pointerdown", onPointerDown);
-      track.removeEventListener("pointermove", onPointerMove);
-      track.removeEventListener("pointerup", resetDrag);
-      track.removeEventListener("pointercancel", resetDrag);
-      track.removeEventListener("touchstart", onTouchStart);
-      track.removeEventListener("touchmove", onTouchMove);
-      track.removeEventListener("touchend", resetDrag);
-      track.removeEventListener("touchcancel", resetDrag);
-      track.removeEventListener("wheel", cancelAutoplay);
-      for (const image of images) {
-        image.removeEventListener("load", markImageReady);
-        image.removeEventListener("error", markImageReady);
-      }
-    };
-  }, [allImagesLoaded, ordered]);
-
-  if (ordered.length === 0) return null;
+  if (media.length === 0) return null;
 
   return (
     <div className="shrink-0 border-b p-4" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
       <div
-        ref={trackRef}
         className="hide-scrollbar flex gap-3 overflow-x-auto overflow-y-hidden rounded-2xl"
         style={{
-          scrollBehavior: "auto",
+          scrollBehavior: "smooth",
           touchAction: "pan-x pan-y",
           height: "min(44svh, 280px)",
-          opacity: allImagesLoaded ? 1 : 0,
-          transition: "opacity 0.18s ease",
         }}
       >
-        {ordered.map((src, index) => (
-          <img
-            key={`${src}-${index}`}
-            src={src}
-            alt={`${name} screenshot ${index + 1}`}
-            className="block h-full w-auto shrink-0 rounded-2xl object-contain"
-            style={{
-              background: "#020617",
-              border: "1px solid rgba(56,189,248,0.22)",
-              boxShadow: "0 18px 40px rgba(2,6,23,0.4)",
-            }}
-          />
+        {media.map((item, index) => (
+          item.kind === "video" ? (
+            <div
+              key={`video-${item.src}`}
+              className="relative h-full shrink-0 overflow-hidden rounded-2xl"
+              style={{
+                aspectRatio: "16 / 9",
+                background: "#020617",
+                border: "1px solid rgba(56,189,248,0.22)",
+                boxShadow: "0 18px 40px rgba(2,6,23,0.4)",
+              }}
+            >
+              <iframe
+                src={item.src}
+                title={`${name} video`}
+                className="block h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
+          ) : (
+            <img
+              key={`${item.src}-${index}`}
+              src={item.src}
+              alt={`${name} screenshot ${index}`}
+              className="block h-full w-auto shrink-0 rounded-2xl object-contain"
+              onLoad={() => {
+                setLoadedImages((current) => (current[item.src] ? current : { ...current, [item.src]: true }));
+              }}
+              style={{
+                background: loadedImages[item.src] ? "#020617" : "transparent",
+                border: loadedImages[item.src] ? "1px solid rgba(56,189,248,0.22)" : "0",
+                boxShadow: loadedImages[item.src] ? "0 18px 40px rgba(2,6,23,0.4)" : "none",
+              }}
+            />
+          )
         ))}
       </div>
     </div>
@@ -977,6 +870,15 @@ export default function App() {
   return (
     <div className="min-h-[100lvh] px-6 py-10">
       <div className="app-shell-actions">
+        <a
+          href={SHELL_YOUTUBE_URL}
+          target="_blank"
+          rel="noreferrer"
+          title="Open YouTube channel"
+          className="app-settings-button app-settings-button-plain"
+        >
+          <img src={SHELL_YOUTUBE_ICON_URL} alt="YouTube" className="app-settings-icon" />
+        </a>
         <a
           href={SHELL_GITHUB_URL}
           target="_blank"
@@ -1413,8 +1315,8 @@ export default function App() {
           )}
 
           <div className="lg:flex-1 lg:overflow-y-auto">
-            {drawer.screenshots.length > 0 && (
-              <ScreenshotCarousel screenshots={drawer.screenshots} name={drawer.name} />
+            {(drawer.videoUrl || drawer.screenshots.length > 0) && (
+              <ScreenshotCarousel screenshots={drawer.screenshots} videoUrl={drawer.videoUrl} name={drawer.name} />
             )}
 
             {/* Row 2: description */}

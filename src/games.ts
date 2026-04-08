@@ -10,6 +10,7 @@ export interface GameManifest {
   name?: string;
   icon?: string;
   screenshots?: string[];
+  videoUrl?: string;
   tags?: string[];
   subjects?: string[];
   skills?: string[];
@@ -54,6 +55,7 @@ export interface Game {
   name: string;
   url: string;
   screenshots: string[];
+  videoUrl?: string;
   buildStamp?: string;
   tags: string[];
   subjects: string[];
@@ -186,6 +188,7 @@ export function normalizeGame(
     name,
     url: raw.url.trim(),
     screenshots: Array.isArray(raw.screenshots) ? raw.screenshots.map(String).filter(Boolean) : [],
+    videoUrl: typeof raw.videoUrl === "string" ? raw.videoUrl.trim() || undefined : undefined,
     buildStamp,
     tags: Array.isArray(raw.tags) ? raw.tags.map(String) : [],
     subjects: Array.isArray(raw.subjects) ? raw.subjects.map(String) : ["maths"],
