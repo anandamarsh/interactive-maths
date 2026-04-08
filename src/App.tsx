@@ -8,7 +8,7 @@ import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
 const SHELL_GITHUB_URL = "https://github.com/anandamarsh/see-maths";
 const SHELL_YOUTUBE_URL = "https://www.youtube.com/@SeeMaths0";
 const SHELL_YOUTUBE_ICON_URL = "/youtube-circle-logo-svgrepo-com.svg";
-const SHELL_PUBLIC_URL = "https://see-maths.vercel.app/";
+const SHELL_PUBLIC_URL = "https://seemaths.com/";
 const OVERLAY_EVENT_TYPES = new Set(["see-maths:overlay-active", "interactive-maths:overlay-active"]);
 
 function GitHubIcon({ className = "" }: { className?: string }) {
