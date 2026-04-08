@@ -10,8 +10,8 @@ import {
   WhatsappShareButton,
 } from "react-share";
 
-const SHARE_TITLE = "Check out this maths game on CMaths!";
-const SHARE_URL = "https://cmaths.com/";
+const SHARE_TITLE = "Check out this maths game on See Maths!";
+const SHARE_URL = "https://see-maths.vercel.app/";
 const DEFAULT_DISCUSSIT_URL = import.meta.env.PROD
   ? "https://discussit-widget.vercel.app"
   : "http://localhost:5001";
@@ -52,7 +52,7 @@ export function SocialShare() {
 function getCanonicalPageUrl(): string {
   if (typeof window === "undefined") return SHARE_URL;
   const url = new URL(window.location.href);
-  url.hostname = "interactive-maths.vercel.app";
+  url.hostname = "see-maths.vercel.app";
   url.port = "";
   url.protocol = "https:";
   return url.toString();

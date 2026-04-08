@@ -5,9 +5,11 @@ import type { Game, GameListEntry, GameSlot, TeachingLevel } from "./games";
 import { compareGameSlots, createGameSlot, loadGamesListProgressively } from "./games";
 import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
 
-const SHELL_GITHUB_URL = "https://github.com/anandamarsh/interactive-maths";
+const SHELL_GITHUB_URL = "https://github.com/anandamarsh/see-maths";
 const SHELL_YOUTUBE_URL = "https://www.youtube.com/@SeeMaths0";
 const SHELL_YOUTUBE_ICON_URL = "/youtube-circle-logo-svgrepo-com.svg";
+const SHELL_PUBLIC_URL = "https://see-maths.vercel.app/";
+const OVERLAY_EVENT_TYPES = new Set(["see-maths:overlay-active", "interactive-maths:overlay-active"]);
 
 function GitHubIcon({ className = "" }: { className?: string }) {
   return (
@@ -432,11 +434,14 @@ function LevelLaunchButtons({
   );
 }
 
-const notificationPreferenceKey = "interactive-maths:comment-notifications";
+const notificationPreferenceKey = "see-maths:comment-notifications";
+const legacyNotificationPreferenceKey = "interactive-maths:comment-notifications";
 
 function readNotificationPreference() {
   if (typeof window === "undefined") return "off";
-  return window.localStorage.getItem(notificationPreferenceKey) ?? "off";
+  return window.localStorage.getItem(notificationPreferenceKey)
+    ?? window.localStorage.getItem(legacyNotificationPreferenceKey)
+    ?? "off";
 }
 
 function toYouTubeEmbedUrl(url: string): string | null {
@@ -766,9 +771,9 @@ export default function App() {
       standalone?: boolean;
     };
     const shareData: ShareData = {
-      title: document.title || "Interactive Maths",
-      text: "Check out this maths game on Interactive Maths!",
-      url: "https://interactive-maths.vercel.app/",
+      title: document.title || "See Maths",
+      text: "Check out this maths game on See Maths!",
+      url: SHELL_PUBLIC_URL,
     };
     const looksMobileOrPwa =
       window.matchMedia?.("(display-mode: standalone)").matches
@@ -819,7 +824,7 @@ export default function App() {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (!event.data || event.data.type !== "interactive-maths:overlay-active") {
+      if (!event.data || !OVERLAY_EVENT_TYPES.has(event.data.type)) {
         return;
       }
 

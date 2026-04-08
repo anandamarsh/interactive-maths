@@ -1,6 +1,6 @@
-# Interactive Maths
+# See Maths
 
-Interactive Maths is a host app for a collection of individual maths mini-apps. It does not contain the learning activities themselves. Instead, it discovers them, displays them in a searchable library, and opens each one inside the shell app.
+See Maths is a host app for a collection of individual maths mini-apps. It does not contain the learning activities themselves. Instead, it discovers them, displays them in a searchable library, and opens each one inside the shell app.
 
 The goal of this project is to give students and teachers a single entry point into multiple interactive maths experiences without needing a separate launcher for every app.
 

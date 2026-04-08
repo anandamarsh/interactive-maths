@@ -23,8 +23,8 @@ type AppPushMetadata = {
 function getAppPushMetadata(): AppPushMetadata {
   const scopeUrl = new URL("./", window.location.href);
   return {
-    appId: "interactive-maths",
-    appName: "Interactive Maths",
+    appId: "see-maths",
+    appName: "See Maths",
     appOrigin: window.location.origin,
     appScope: scopeUrl.href,
   };

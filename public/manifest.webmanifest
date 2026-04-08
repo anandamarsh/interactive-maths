@@ -1,7 +1,7 @@
 {
   "name": "See the Maths you Do",
   "short_name": "See Maths",
-  "description": "Arcade-style maths games",
+  "description": "See Maths launcher for interactive maths games",
   "id": "./",
   "start_url": "./",
   "scope": "./",

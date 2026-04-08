@@ -1,4 +1,4 @@
-const CACHE_VERSION = "interactive-maths-v4";
+const CACHE_VERSION = "see-maths-v1";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const SCOPE_URL = new URL(self.registration.scope);
@@ -129,10 +129,10 @@ self.addEventListener("push", (event) => {
     payload = { body: event.data.text() };
   }
 
-  const title = payload.title || "Interactive Maths";
+  const title = payload.title || "See Maths";
   const body = payload.body || "You have a new notification.";
   const url = resolveAppUrl(payload.url);
-  const tag = payload.tag || "interactive-maths-push";
+  const tag = payload.tag || "see-maths-push";
 
   event.waitUntil(
     self.registration.showNotification(title, {
