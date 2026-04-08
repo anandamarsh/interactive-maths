@@ -5,7 +5,7 @@
 }
 
 html {
-  background-color: #020617;
+  background-color: #00001f;
   min-height: 100vh;
   min-height: 100lvh;
 }
@@ -15,14 +15,14 @@ body {
   min-height: 100vh;
   min-height: 100lvh;
   min-height: -webkit-fill-available;
-  background-color: #020617;
+  background-color: #00001f;
   color: #f8fafc;
 }
 
 #root {
   min-height: 100vh;
   min-height: 100lvh;
-  background-color: #020617;
+  background-color: #00001f;
 }
 
 .hide-scrollbar {

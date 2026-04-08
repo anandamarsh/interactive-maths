@@ -2,19 +2,67 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { SocialComments, SocialShare } from "./components/Social";
 import { GameIcon } from "./components/GameIcon";
 import type { Game, GameListEntry, GameSlot, TeachingLevel } from "./games";
-import { compareGameSlots, createGameSlot, loadGamesListProgressively } from "./games";
+import {
+  compareGameSlots,
+  createGameSlot,
+  loadGamesListProgressively,
+} from "./games";
 import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
 
 const SHELL_GITHUB_URL = "https://github.com/anandamarsh/see-maths";
 const SHELL_YOUTUBE_URL = "https://www.youtube.com/@SeeMaths0";
 const SHELL_YOUTUBE_ICON_URL = "/youtube-circle-logo-svgrepo-com.svg";
 const SHELL_PUBLIC_URL = "https://seemaths.com/";
-const OVERLAY_EVENT_TYPES = new Set(["see-maths:overlay-active", "interactive-maths:overlay-active"]);
+const OVERLAY_EVENT_TYPES = new Set([
+  "see-maths:overlay-active",
+  "interactive-maths:overlay-active",
+]);
 
 function GitHubIcon({ className = "" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      aria-hidden="true"
+    >
       <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.02c-3.34.73-4.04-1.42-4.04-1.42-.55-1.38-1.33-1.74-1.33-1.74-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.23 1.84 1.23 1.08 1.84 2.82 1.31 3.5 1 .11-.78.42-1.31.77-1.61-2.67-.3-5.47-1.33-5.47-5.94 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.53.12-3.18 0 0 1.01-.32 3.3 1.23a11.4 11.4 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.62-2.81 5.64-5.49 5.94.43.37.82 1.1.82 2.22v3.29c0 .32.22.69.83.58A12 12 0 0 0 12 .5Z" />
+    </svg>
+  );
+}
+
+function EyesLogo({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 80 700 360"
+      className={className}
+      style={{ overflow: "visible" }}
+      aria-hidden="true"
+    >
+      <g transform="rotate(-15 400 320)">
+        <path
+          d="M260 200 Q340 160 420 200"
+          fill="none"
+          stroke="#5E667A"
+          strokeWidth="14"
+          strokeLinecap="round"
+        />
+        <path
+          d="M440 200 Q520 160 600 200"
+          fill="none"
+          stroke="#5E667A"
+          strokeWidth="14"
+          strokeLinecap="round"
+        />
+        <ellipse cx="360" cy="320" rx="90" ry="110" fill="#FFFFFF" />
+        <ellipse cx="390" cy="350" rx="42" ry="50" fill="#3DB5F2" />
+        <circle cx="405" cy="360" r="26" fill="#000000" />
+        <circle cx="390" cy="330" r="10" fill="#FFFFFF" />
+        <ellipse cx="520" cy="320" rx="78" ry="96" fill="#FFFFFF" />
+        <ellipse cx="545" cy="350" rx="36" ry="44" fill="#3DB5F2" />
+        <circle cx="558" cy="358" r="22" fill="#000000" />
+        <circle cx="545" cy="332" r="8" fill="#FFFFFF" />
+      </g>
     </svg>
   );
 }
@@ -22,7 +70,8 @@ function GitHubIcon({ className = "" }: { className?: string }) {
 /** Avoid mixed-content when the shell is HTTPS */
 function iframeSrc(url: string): string {
   if (typeof window === "undefined") return url;
-  if (window.location.protocol !== "https:" || !url.startsWith("http://")) return url;
+  if (window.location.protocol !== "https:" || !url.startsWith("http://"))
+    return url;
   try {
     const u = new URL(url);
     u.protocol = "https:";
@@ -64,12 +113,12 @@ function withLevelParam(url: string, level: number): string {
 }
 
 const SKILL_COLORS = [
-  { bg: "rgba(56,189,248,0.15)",  color: "#38bdf8" },
+  { bg: "rgba(56,189,248,0.15)", color: "#38bdf8" },
   { bg: "rgba(167,139,250,0.15)", color: "#a78bfa" },
-  { bg: "rgba(251,191,36,0.15)",  color: "#fbbf24" },
-  { bg: "rgba(74,222,128,0.15)",  color: "#4ade80" },
+  { bg: "rgba(251,191,36,0.15)", color: "#fbbf24" },
+  { bg: "rgba(74,222,128,0.15)", color: "#4ade80" },
   { bg: "rgba(251,113,133,0.15)", color: "#fb7185" },
-  { bg: "rgba(251,146,60,0.15)",  color: "#fb923c" },
+  { bg: "rgba(251,146,60,0.15)", color: "#fb923c" },
 ];
 
 function renderDescriptionLines(lines: string[], keyPrefix: string) {
@@ -81,15 +130,22 @@ function renderDescriptionLines(lines: string[], keyPrefix: string) {
       result.push(<div key={`${keyPrefix}-${key++}`} className="h-3" />);
     } else if (line.startsWith("- ")) {
       result.push(
-        <p key={`${keyPrefix}-${key++}`} className="text-sm text-slate-300 leading-relaxed pl-3" style={{ textIndent: "-0.75rem", paddingLeft: "0.75rem" }}>
+        <p
+          key={`${keyPrefix}-${key++}`}
+          className="text-sm text-slate-300 leading-relaxed pl-3"
+          style={{ textIndent: "-0.75rem", paddingLeft: "0.75rem" }}
+        >
           <span style={{ color: "#4ade80" }}>–</span> {line.slice(2)}
-        </p>
+        </p>,
       );
     } else {
       result.push(
-        <p key={`${keyPrefix}-${key++}`} className="text-sm text-slate-300 leading-relaxed">
+        <p
+          key={`${keyPrefix}-${key++}`}
+          className="text-sm text-slate-300 leading-relaxed"
+        >
           {line}
-        </p>
+        </p>,
       );
     }
   }
@@ -102,22 +158,54 @@ type DescriptionSection = {
   lines: string[];
 };
 
-const STAGE_COLOR_SCENE: Record<string, { border: string; bg: string; text: string }> = {
-  "Stage 1": { border: "rgba(244, 114, 182, 0.48)", bg: "rgba(244, 114, 182, 0.16)", text: "#f9a8d4" },
-  "Stage 2": { border: "rgba(250, 204, 21, 0.48)", bg: "rgba(250, 204, 21, 0.16)", text: "#fde047" },
-  "Stage 3": { border: "rgba(251, 146, 60, 0.48)", bg: "rgba(251, 146, 60, 0.16)", text: "#fdba74" },
-  "Stage 4": { border: "rgba(167, 139, 250, 0.48)", bg: "rgba(167, 139, 250, 0.16)", text: "#c4b5fd" },
-  "Stage 5": { border: "rgba(248, 113, 113, 0.48)", bg: "rgba(248, 113, 113, 0.16)", text: "#fca5a5" },
-  "Stage 6": { border: "rgba(245, 158, 11, 0.48)", bg: "rgba(245, 158, 11, 0.16)", text: "#fcd34d" },
+const STAGE_COLOR_SCENE: Record<
+  string,
+  { border: string; bg: string; text: string }
+> = {
+  "Stage 1": {
+    border: "rgba(244, 114, 182, 0.48)",
+    bg: "rgba(244, 114, 182, 0.16)",
+    text: "#f9a8d4",
+  },
+  "Stage 2": {
+    border: "rgba(250, 204, 21, 0.48)",
+    bg: "rgba(250, 204, 21, 0.16)",
+    text: "#fde047",
+  },
+  "Stage 3": {
+    border: "rgba(251, 146, 60, 0.48)",
+    bg: "rgba(251, 146, 60, 0.16)",
+    text: "#fdba74",
+  },
+  "Stage 4": {
+    border: "rgba(167, 139, 250, 0.48)",
+    bg: "rgba(167, 139, 250, 0.16)",
+    text: "#c4b5fd",
+  },
+  "Stage 5": {
+    border: "rgba(248, 113, 113, 0.48)",
+    bg: "rgba(248, 113, 113, 0.16)",
+    text: "#fca5a5",
+  },
+  "Stage 6": {
+    border: "rgba(245, 158, 11, 0.48)",
+    bg: "rgba(245, 158, 11, 0.16)",
+    text: "#fcd34d",
+  },
 };
 
 function splitDescriptionSections(text: string): DescriptionSection[] {
   const lines = text.split("\n");
   const sections: DescriptionSection[] = [];
-  let current: DescriptionSection = { heading: null, headingRest: "", lines: [] };
+  let current: DescriptionSection = {
+    heading: null,
+    headingRest: "",
+    lines: [],
+  };
 
   const pushCurrent = () => {
-    if (current.heading !== null || current.lines.length > 0) sections.push(current);
+    if (current.heading !== null || current.lines.length > 0)
+      sections.push(current);
   };
 
   for (const line of lines) {
@@ -146,11 +234,13 @@ function getStageKey(level: TeachingLevel) {
 
 function getCurriculumColor(level: TeachingLevel) {
   const stageKey = getStageKey(level);
-  return STAGE_COLOR_SCENE[stageKey] ?? {
-    border: "rgba(148, 163, 184, 0.28)",
-    bg: "rgba(148, 163, 184, 0.12)",
-    text: "#cbd5e1",
-  };
+  return (
+    STAGE_COLOR_SCENE[stageKey] ?? {
+      border: "rgba(148, 163, 184, 0.28)",
+      bg: "rgba(148, 163, 184, 0.12)",
+      text: "#cbd5e1",
+    }
+  );
 }
 
 function splitLevelLabel(label: string) {
@@ -162,19 +252,30 @@ function splitLevelLabel(label: string) {
 function titleCaseLevelBody(body: string) {
   if (!body) return "";
   const normalized = body.charAt(0).toUpperCase() + body.slice(1);
-  return normalized.replace(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)(\s+)/, (_match, words, spacing) => {
-    return `${words}${spacing}`;
-  });
+  return normalized.replace(
+    /^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)(\s+)/,
+    (_match, words, spacing) => {
+      return `${words}${spacing}`;
+    },
+  );
 }
 
 function isLiveSyllabusUrl(url: string | undefined) {
   return typeof url === "string" && /^https?:\/\//.test(url);
 }
 
-function CurriculumTag({ level, compact = false }: { level: TeachingLevel; compact?: boolean }) {
+function CurriculumTag({
+  level,
+  compact = false,
+}: {
+  level: TeachingLevel;
+  compact?: boolean;
+}) {
   if (!level.syllabusCode) return null;
 
-  const liveUrl = isLiveSyllabusUrl(level.syllabusUrl) ? level.syllabusUrl : undefined;
+  const liveUrl = isLiveSyllabusUrl(level.syllabusUrl)
+    ? level.syllabusUrl
+    : undefined;
   const colors = getCurriculumColor(level);
   const className = compact
     ? "inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-[11px] leading-none font-bold tracking-wide"
@@ -218,10 +319,16 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
             key={`${level.label}-${index}`}
             className="flex items-start gap-2 pl-1 text-sm text-slate-200"
           >
-            <span style={{ color: "#4ade80" }} className="leading-6">–</span>
+            <span style={{ color: "#4ade80" }} className="leading-6">
+              –
+            </span>
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 leading-relaxed">
-              {level.syllabusCode ? <CurriculumTag level={level} compact /> : null}
-              <span style={{ color: "#4ade80" }} className="font-semibold">{prefix}</span>
+              {level.syllabusCode ? (
+                <CurriculumTag level={level} compact />
+              ) : null}
+              <span style={{ color: "#4ade80" }} className="font-semibold">
+                {prefix}
+              </span>
               {bodyText ? <span>{bodyText}</span> : null}
             </div>
           </div>
@@ -234,21 +341,36 @@ function WhatItTeachesLevels({ levels }: { levels: TeachingLevel[] }) {
 function ReferencesSection({ levels }: { levels: TeachingLevel[] }) {
   return (
     <div className="mt-6 space-y-2">
-      <p className="text-xs font-bold tracking-wider mb-3" style={{ color: "#38bdf8" }}>
+      <p
+        className="text-xs font-bold tracking-wider mb-3"
+        style={{ color: "#38bdf8" }}
+      >
         REFERENCES:
       </p>
       <div className="space-y-2">
         {levels.map((level, index) => (
-          <div key={`reference-${level.syllabusCode ?? level.label}-${index}`} className="flex items-start gap-2 pl-1 text-sm text-slate-200">
-            <span style={{ color: "#4ade80" }} className="leading-6">–</span>
+          <div
+            key={`reference-${level.syllabusCode ?? level.label}-${index}`}
+            className="flex items-start gap-2 pl-1 text-sm text-slate-200"
+          >
+            <span style={{ color: "#4ade80" }} className="leading-6">
+              –
+            </span>
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 leading-relaxed">
-              {level.syllabusCode ? <CurriculumTag level={level} compact /> : null}
+              {level.syllabusCode ? (
+                <CurriculumTag level={level} compact />
+              ) : null}
               {level.stageLabel ? (
-                <span style={{ color: getCurriculumColor(level).text }} className="font-semibold">
+                <span
+                  style={{ color: getCurriculumColor(level).text }}
+                  className="font-semibold"
+                >
                   {level.stageLabel}
                 </span>
               ) : null}
-              {level.syllabusDescription ? <span>{level.syllabusDescription}</span> : null}
+              {level.syllabusDescription ? (
+                <span>{level.syllabusDescription}</span>
+              ) : null}
             </div>
           </div>
         ))}
@@ -262,25 +384,48 @@ function renderDescription(text: string, teachesLevels: TeachingLevel[]) {
     const result: React.ReactNode[] = [];
 
     if (section.heading === "TECH:" && teachesLevels.length > 0) {
-      result.push(<ReferencesSection key={`references-${sectionIndex}`} levels={teachesLevels} />);
-      result.push(<div key={`references-gap-${sectionIndex}`} className="h-4" />);
+      result.push(
+        <ReferencesSection
+          key={`references-${sectionIndex}`}
+          levels={teachesLevels}
+        />,
+      );
+      result.push(
+        <div key={`references-gap-${sectionIndex}`} className="h-4" />,
+      );
     }
 
     if (section.heading !== null) {
       result.push(
-        <p key={`heading-${sectionIndex}`} className="text-xs font-bold tracking-wider mb-3 mt-6 first:mt-0" style={{ color: "#38bdf8" }}>
+        <p
+          key={`heading-${sectionIndex}`}
+          className="text-xs font-bold tracking-wider mb-3 mt-6 first:mt-0"
+          style={{ color: "#38bdf8" }}
+        >
           {section.heading}
-          {section.headingRest && <span className="font-normal tracking-normal text-slate-300"> {section.headingRest}</span>}
-        </p>
+          {section.headingRest && (
+            <span className="font-normal tracking-normal text-slate-300">
+              {" "}
+              {section.headingRest}
+            </span>
+          )}
+        </p>,
       );
     }
 
     if (section.heading === "WHAT IT TEACHES:" && teachesLevels.length > 0) {
-      result.push(<WhatItTeachesLevels key={`teaches-${sectionIndex}`} levels={teachesLevels} />);
+      result.push(
+        <WhatItTeachesLevels
+          key={`teaches-${sectionIndex}`}
+          levels={teachesLevels}
+        />,
+      );
       return result;
     }
 
-    return result.concat(renderDescriptionLines(section.lines, `section-${sectionIndex}`));
+    return result.concat(
+      renderDescriptionLines(section.lines, `section-${sectionIndex}`),
+    );
   });
 }
 
@@ -317,12 +462,16 @@ function formatYearStripLabel(label: string): string {
 /** Merge all active teachesLevels into a single year label, e.g. [Stage 2 Yr 3-4, Stage 3 Yr 5-6] → "Year 3-6" */
 function deriveYearStripLabel(levels: TeachingLevel[]): string {
   // Exclude "coming soon" placeholder levels
-  const active = levels.filter(lv => !/coming soon/i.test(lv.label));
-  let minYear = Infinity, maxYear = -Infinity;
+  const active = levels.filter((lv) => !/coming soon/i.test(lv.label));
+  let minYear = Infinity,
+    maxYear = -Infinity;
   let hasKindergarten = false;
   for (const lv of active) {
     const sl = lv.stageLabel ?? "";
-    if (/kindergarten/i.test(sl)) { hasKindergarten = true; continue; }
+    if (/kindergarten/i.test(sl)) {
+      hasKindergarten = true;
+      continue;
+    }
     const m = sl.match(/Years?\s+(\d+)-(\d+)/i);
     if (m) {
       minYear = Math.min(minYear, parseInt(m[1]));
@@ -345,18 +494,26 @@ function getStageColor(levels: TeachingLevel[]): string {
     const m = sl.match(/Stage\s+(\d+)/i);
     return m ? parseInt(m[1]) : 99;
   };
-  const sorted = [...levels].sort((a, b) => stageNum(a.stageLabel ?? "") - stageNum(b.stageLabel ?? ""));
+  const sorted = [...levels].sort(
+    (a, b) => stageNum(a.stageLabel ?? "") - stageNum(b.stageLabel ?? ""),
+  );
   const sl = sorted[0]?.stageLabel ?? "";
   if (/kindergarten/i.test(sl)) return "#7c3aed";
   const m = sl.match(/Stage\s+(\d+)/i);
   if (!m) return "#475569";
   switch (m[1]) {
-    case "1": return "#0891b2";
-    case "2": return "#2563eb";
-    case "3": return "#059669";
-    case "4": return "#d97706";
-    case "5": return "#dc2626";
-    default:  return "#475569";
+    case "1":
+      return "#0891b2";
+    case "2":
+      return "#2563eb";
+    case "3":
+      return "#059669";
+    case "4":
+      return "#d97706";
+    case "5":
+      return "#dc2626";
+    default:
+      return "#475569";
   }
 }
 
@@ -364,7 +521,11 @@ function getYearColor(yearLabel: string): string {
   if (/preschool|kindergarten/i.test(yearLabel)) return "#7c3aed";
   const rangeMatch = yearLabel.match(/(\d+)\s*-\s*(\d+)/);
   const singleMatch = yearLabel.match(/(\d+)/);
-  const minYear = rangeMatch ? parseInt(rangeMatch[1], 10) : singleMatch ? parseInt(singleMatch[1], 10) : 99;
+  const minYear = rangeMatch
+    ? parseInt(rangeMatch[1], 10)
+    : singleMatch
+      ? parseInt(singleMatch[1], 10)
+      : 99;
   if (minYear <= 2) return "#0891b2";
   if (minYear <= 4) return "#2563eb";
   if (minYear <= 6) return "#059669";
@@ -435,13 +596,16 @@ function LevelLaunchButtons({
 }
 
 const notificationPreferenceKey = "see-maths:comment-notifications";
-const legacyNotificationPreferenceKey = "interactive-maths:comment-notifications";
+const legacyNotificationPreferenceKey =
+  "interactive-maths:comment-notifications";
 
 function readNotificationPreference() {
   if (typeof window === "undefined") return "off";
-  return window.localStorage.getItem(notificationPreferenceKey)
-    ?? window.localStorage.getItem(legacyNotificationPreferenceKey)
-    ?? "off";
+  return (
+    window.localStorage.getItem(notificationPreferenceKey) ??
+    window.localStorage.getItem(legacyNotificationPreferenceKey) ??
+    "off"
+  );
 }
 
 function toYouTubeEmbedUrl(url: string): string | null {
@@ -449,7 +613,10 @@ function toYouTubeEmbedUrl(url: string): string | null {
     const parsed = new URL(url);
     const videoId = parsed.hostname.includes("youtu.be")
       ? parsed.pathname.replace(/^\/+/, "")
-      : parsed.searchParams.get("v") ?? (parsed.pathname.startsWith("/shorts/") ? parsed.pathname.split("/")[2] : null);
+      : (parsed.searchParams.get("v") ??
+        (parsed.pathname.startsWith("/shorts/")
+          ? parsed.pathname.split("/")[2]
+          : null));
     if (!videoId) return null;
     return `https://www.youtube.com/embed/${videoId}`;
   } catch {
@@ -457,12 +624,23 @@ function toYouTubeEmbedUrl(url: string): string | null {
   }
 }
 
-function ScreenshotCarousel({ screenshots, videoUrl, name }: { screenshots: string[]; videoUrl?: string; name: string }) {
+function ScreenshotCarousel({
+  screenshots,
+  videoUrl,
+  name,
+}: {
+  screenshots: string[];
+  videoUrl?: string;
+  name: string;
+}) {
   const media = useMemo(() => {
-    const items: Array<{ kind: "video"; src: string } | { kind: "image"; src: string }> = [];
+    const items: Array<
+      { kind: "video"; src: string } | { kind: "image"; src: string }
+    > = [];
     const embedUrl = videoUrl ? toYouTubeEmbedUrl(videoUrl) : null;
     if (embedUrl) items.push({ kind: "video", src: embedUrl });
-    for (const screenshot of screenshots) items.push({ kind: "image", src: screenshot });
+    for (const screenshot of screenshots)
+      items.push({ kind: "image", src: screenshot });
     return items;
   }, [screenshots, videoUrl]);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
@@ -474,7 +652,10 @@ function ScreenshotCarousel({ screenshots, videoUrl, name }: { screenshots: stri
   if (media.length === 0) return null;
 
   return (
-    <div className="shrink-0 border-b p-4" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+    <div
+      className="shrink-0 border-b p-4"
+      style={{ borderColor: "rgba(255,255,255,0.08)" }}
+    >
       <div
         className="hide-scrollbar flex gap-3 overflow-x-auto overflow-y-hidden rounded-2xl"
         style={{
@@ -483,7 +664,7 @@ function ScreenshotCarousel({ screenshots, videoUrl, name }: { screenshots: stri
           height: "min(44svh, 280px)",
         }}
       >
-        {media.map((item, index) => (
+        {media.map((item, index) =>
           item.kind === "video" ? (
             <div
               key={`video-${item.src}`}
@@ -511,16 +692,24 @@ function ScreenshotCarousel({ screenshots, videoUrl, name }: { screenshots: stri
               alt={`${name} screenshot ${index}`}
               className="block h-full w-auto shrink-0 rounded-2xl object-contain"
               onLoad={() => {
-                setLoadedImages((current) => (current[item.src] ? current : { ...current, [item.src]: true }));
+                setLoadedImages((current) =>
+                  current[item.src]
+                    ? current
+                    : { ...current, [item.src]: true },
+                );
               }}
               style={{
                 background: loadedImages[item.src] ? "#020617" : "transparent",
-                border: loadedImages[item.src] ? "1px solid rgba(56,189,248,0.22)" : "0",
-                boxShadow: loadedImages[item.src] ? "0 18px 40px rgba(2,6,23,0.4)" : "none",
+                border: loadedImages[item.src]
+                  ? "1px solid rgba(56,189,248,0.22)"
+                  : "0",
+                boxShadow: loadedImages[item.src]
+                  ? "0 18px 40px rgba(2,6,23,0.4)"
+                  : "none",
               }}
             />
-          )
-        ))}
+          ),
+        )}
       </div>
     </div>
   );
@@ -571,7 +760,8 @@ function LoadingCard({ slot }: { slot: GameSlot }) {
       <div
         className="flex h-32 w-32 items-center justify-center rounded-[1.75rem]"
         style={{
-          background: "linear-gradient(180deg, rgba(30,41,59,0.82) 0%, rgba(15,23,42,0.92) 100%)",
+          background:
+            "linear-gradient(180deg, rgba(30,41,59,0.82) 0%, rgba(15,23,42,0.92) 100%)",
           border: "1px solid rgba(148,163,184,0.18)",
         }}
       >
@@ -600,7 +790,9 @@ export default function App() {
   const [slots, setSlots] = useState<GameSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState<{ game: Game; url: string } | null>(null);
+  const [active, setActive] = useState<{ game: Game; url: string } | null>(
+    null,
+  );
   const [drawer, setDrawer] = useState<Game | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showShareDrawer, setShowShareDrawer] = useState(false);
@@ -609,8 +801,12 @@ export default function App() {
   const [commentComposeRequest, setCommentComposeRequest] = useState(0);
   const [commentReloadRequest, setCommentReloadRequest] = useState(0);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [notificationPreference, setNotificationPreference] = useState(readNotificationPreference);
-  const [pushState, setPushState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [notificationPreference, setNotificationPreference] = useState(
+    readNotificationPreference,
+  );
+  const [pushState, setPushState] = useState<
+    "idle" | "sending" | "sent" | "error"
+  >("idle");
   const [pushError, setPushError] = useState("");
   const [isMobileLandscape, setIsMobileLandscape] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -653,13 +849,16 @@ export default function App() {
           const slotId = `${index}:${entries[index].playUrl.trim()}`;
           setSlots((current) =>
             current
-              .map((slot) => (slot.slotId === slotId ? { ...slot, game } : slot))
+              .map((slot) =>
+                slot.slotId === slotId ? { ...slot, game } : slot,
+              )
               .sort(compareGameSlots),
           );
         });
       })
       .catch((error) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
         console.error("Failed to load games list:", error);
       })
       .finally(() => {
@@ -674,8 +873,12 @@ export default function App() {
 
   useEffect(() => {
     const syncViewportMode = () => {
-      setIsMobileLandscape(window.innerWidth < 1024 && window.innerWidth > window.innerHeight);
-      setIsMobilePortrait(window.innerWidth < 1024 && window.innerWidth <= window.innerHeight);
+      setIsMobileLandscape(
+        window.innerWidth < 1024 && window.innerWidth > window.innerHeight,
+      );
+      setIsMobilePortrait(
+        window.innerWidth < 1024 && window.innerWidth <= window.innerHeight,
+      );
     };
 
     syncViewportMode();
@@ -684,7 +887,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(notificationPreferenceKey, notificationPreference);
+    window.localStorage.setItem(
+      notificationPreferenceKey,
+      notificationPreference,
+    );
   }, [notificationPreference]);
 
   const openDrawer = (g: Game) => {
@@ -732,7 +938,11 @@ export default function App() {
       } catch (error) {
         setNotificationPreference("off");
         setPushState("error");
-        setPushError(error instanceof Error ? error.message : "Failed to enable notifications.");
+        setPushError(
+          error instanceof Error
+            ? error.message
+            : "Failed to enable notifications.",
+        );
         return;
       }
     }
@@ -758,7 +968,9 @@ export default function App() {
       window.setTimeout(() => setPushState("idle"), 1800);
     } catch (error) {
       setPushState("error");
-      setPushError(error instanceof Error ? error.message : "Push test failed.");
+      setPushError(
+        error instanceof Error ? error.message : "Push test failed.",
+      );
     }
   }
 
@@ -776,16 +988,21 @@ export default function App() {
       url: SHELL_PUBLIC_URL,
     };
     const looksMobileOrPwa =
-      window.matchMedia?.("(display-mode: standalone)").matches
-      || !!nav.standalone
-      || navigator.maxTouchPoints > 0;
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      !!nav.standalone ||
+      navigator.maxTouchPoints > 0;
 
-    if (looksMobileOrPwa && typeof nav.share === "function" && (!nav.canShare || nav.canShare(shareData))) {
+    if (
+      looksMobileOrPwa &&
+      typeof nav.share === "function" &&
+      (!nav.canShare || nav.canShare(shareData))
+    ) {
       try {
         await nav.share(shareData);
         return;
       } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
       }
     }
 
@@ -840,7 +1057,7 @@ export default function App() {
       <div
         className="fixed inset-0"
         style={{
-          backgroundColor: "#020617",
+          backgroundColor: "transparent",
           touchAction: "none",
           overscrollBehavior: "none",
         }}
@@ -864,7 +1081,7 @@ export default function App() {
             className="arcade-button absolute top-2 left-2 z-[40] w-10 h-10 p-2"
           >
             <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
             </svg>
           </button>
         ) : null}
@@ -873,7 +1090,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-[100lvh] px-6 py-10">
+    <div
+      className="min-h-[100lvh] px-6 py-10"
+      style={{ backgroundColor: "transparent" }}
+    >
       <div className="app-shell-actions">
         <a
           href={SHELL_YOUTUBE_URL}
@@ -882,7 +1102,11 @@ export default function App() {
           title="Open YouTube channel"
           className="app-settings-button app-settings-button-plain"
         >
-          <img src={SHELL_YOUTUBE_ICON_URL} alt="YouTube" className="app-settings-icon" />
+          <img
+            src={SHELL_YOUTUBE_ICON_URL}
+            alt="YouTube"
+            className="app-settings-icon"
+          />
         </a>
         <a
           href={SHELL_GITHUB_URL}
@@ -899,16 +1123,24 @@ export default function App() {
           title="Settings"
           className="arcade-button app-settings-button"
         >
-          <svg viewBox="0 0 24 24" className="app-settings-icon" fill="currentColor" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            className="app-settings-icon"
+            fill="currentColor"
+            aria-hidden="true"
+          >
             <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.028 7.028 0 0 0-1.63-.94l-.36-2.54A.488.488 0 0 0 13.9 2h-3.8c-.24 0-.44.17-.48.41l-.36 2.54c-.59.24-1.13.55-1.63.94l-2.39-.96a.493.493 0 0 0-.6.22L2.72 8.47a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.07.64-.07.95s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.22.39.31.6.22l2.39-.96c.5.39 1.05.71 1.63.94l.36 2.54c.04.24.24.41.48.41h3.8c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.55 1.63-.94l2.39.96c.22.09.48 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
           </svg>
         </button>
       </div>
       <div className="max-w-5xl mx-auto w-full">
-        <header className="flex flex-col items-center text-center mb-10">
-          <p className="text-[1.125rem] font-bold tracking-[0.25em] text-sky-400 mb-1">
-            See the Maths you Do
-          </p>
+        <header className="mb-10 flex flex-col items-center overflow-visible pt-4 text-center">
+          <div className="relative mb-1 inline-block overflow-visible pl-10">
+            <EyesLogo className="absolute left-3 top-[-0.9rem] h-5 w-auto" />
+            <p className="text-[1.125rem] font-bold tracking-[0.25em] text-sky-400">
+              See the Maths you Do
+            </p>
+          </div>
 
           <input
             value={query}
@@ -918,7 +1150,8 @@ export default function App() {
             style={{ background: "#0f172a", border: "1px solid #334155" }}
             onFocus={(e) => {
               e.currentTarget.style.borderColor = "#0ea5e9";
-              e.currentTarget.style.boxShadow = "0 0 25px rgba(14,165,233,0.8), 0 0 60px rgba(14,165,233,0.35)";
+              e.currentTarget.style.boxShadow =
+                "0 0 25px rgba(14,165,233,0.8), 0 0 60px rgba(14,165,233,0.35)";
             }}
             onBlur={(e) => {
               e.currentTarget.style.borderColor = "#334155";
@@ -931,87 +1164,100 @@ export default function App() {
           <p className="text-slate-500">No games match "{query}".</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {filteredSlots.map((slot) => slot.game ? (
-              <button
-                key={slot.slotId}
-                onClick={() => openDrawer(slot.game!)}
-                className="relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl p-2 pt-3 text-center transition-all cursor-pointer"
-                style={{ background: "#0f172a", border: "1px solid #1e293b" }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow =
-                    "0 0 25px rgba(74,222,128,0.8), 0 0 60px rgba(74,222,128,0.35)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.boxShadow = "none";
-                }}
-              >
-                {/* Corner badge (top-left): Partner or Starter */}
-                {slot.game.thirdParty ? (
-                  <span
-                    className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
-                    style={partnerTagGoldStyle}
-                  >
-                    Partner
-                  </span>
-                ) : slot.game.tags.includes("starter") ? (
-                  <span
-                    className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
-                    style={starterTagStyle}
-                  >
-                    Starter
-                  </span>
-                ) : null}
-
-                {/* Diagonal year strip — top-right corner, colour-coded by stage */}
-                {(() => {
-                  const label = getYearStripLabel(slot.game.teachesLevels, slot.game.yearLabel);
-                  if (!label) return null;
-                  return (
-                    <div
-                      className="pointer-events-none absolute z-[15]"
-                      style={{
-                        top: "18px",
-                        right: "-28px",
-                        width: "108px",
-                        transform: "rotate(45deg)",
-                        background: slot.game.teachesLevels.length > 0 ? getStageColor(slot.game.teachesLevels) : getYearColor(label),
-                        color: "white",
-                        fontSize: "9px",
-                        fontWeight: 800,
-                        textAlign: "center",
-                        padding: "4px 0",
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {label}
-                    </div>
-                  );
-                })()}
-
-                <GameIcon game={slot.game} className="w-32 h-32 object-contain" />
-                <div className="px-1">
-                  <div className="text-white font-bold text-sm leading-tight">{slot.game.name}</div>
-                </div>
-                <div className="flex flex-wrap justify-center gap-1">
-                  {slot.game.tags.slice(0, 2).map((t, i) => (
+            {filteredSlots.map((slot) =>
+              slot.game ? (
+                <button
+                  key={slot.slotId}
+                  onClick={() => openDrawer(slot.game!)}
+                  className="relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl p-2 pt-3 text-center transition-all cursor-pointer"
+                  style={{ background: "#0f172a", border: "1px solid #1e293b" }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.boxShadow =
+                      "0 0 25px rgba(74,222,128,0.8), 0 0 60px rgba(74,222,128,0.35)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                  }}
+                >
+                  {/* Corner badge (top-left): Partner or Starter */}
+                  {slot.game.thirdParty ? (
                     <span
-                      key={t}
-                      className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                      style={{
-                        background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
-                        color: SKILL_COLORS[i % SKILL_COLORS.length].color,
-                        border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
-                      }}
+                      className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
+                      style={partnerTagGoldStyle}
                     >
-                      {formatTag(t)}
+                      Partner
                     </span>
-                  ))}
-                </div>
-              </button>
-            ) : (
-              <LoadingCard key={slot.slotId} slot={slot} />
-            ))}
+                  ) : slot.game.tags.includes("starter") ? (
+                    <span
+                      className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
+                      style={starterTagStyle}
+                    >
+                      Starter
+                    </span>
+                  ) : null}
+
+                  {/* Diagonal year strip — top-right corner, colour-coded by stage */}
+                  {(() => {
+                    const label = getYearStripLabel(
+                      slot.game.teachesLevels,
+                      slot.game.yearLabel,
+                    );
+                    if (!label) return null;
+                    return (
+                      <div
+                        className="pointer-events-none absolute z-[15]"
+                        style={{
+                          top: "18px",
+                          right: "-28px",
+                          width: "108px",
+                          transform: "rotate(45deg)",
+                          background:
+                            slot.game.teachesLevels.length > 0
+                              ? getStageColor(slot.game.teachesLevels)
+                              : getYearColor(label),
+                          color: "white",
+                          fontSize: "9px",
+                          fontWeight: 800,
+                          textAlign: "center",
+                          padding: "4px 0",
+                          letterSpacing: "0.08em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {label}
+                      </div>
+                    );
+                  })()}
+
+                  <GameIcon
+                    game={slot.game}
+                    className="w-32 h-32 object-contain"
+                  />
+                  <div className="px-1">
+                    <div className="text-white font-bold text-sm leading-tight">
+                      {slot.game.name}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-1">
+                    {slot.game.tags.slice(0, 2).map((t, i) => (
+                      <span
+                        key={t}
+                        className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                        style={{
+                          background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
+                          color: SKILL_COLORS[i % SKILL_COLORS.length].color,
+                          border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
+                        }}
+                      >
+                        {formatTag(t)}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              ) : (
+                <LoadingCard key={slot.slotId} slot={slot} />
+              ),
+            )}
           </div>
         )}
       </div>
@@ -1044,7 +1290,7 @@ export default function App() {
               className="arcade-button w-10 h-10 p-2"
             >
               <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
               </svg>
             </button>
 
@@ -1072,11 +1318,21 @@ export default function App() {
               transform: drawerOpen ? "translateY(0)" : "translateY(100dvh)",
               transition: "transform 0.3s ease, background 0.15s ease",
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#166534"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#14532d"; }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.background = "#166534";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.background = "#14532d";
+            }}
           >
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M18 6L6 18M6 6l12 12"/>
+            <svg
+              viewBox="0 0 24 24"
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
 
@@ -1091,13 +1347,153 @@ export default function App() {
               height: "100dvh",
             }}
           >
-
-          {/* Row 1: icon + meta */}
-          {isMobilePortrait ? (
-            <div className="p-4 pb-3 pt-10 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
-              <div className="flex items-center gap-4">
-                <GameIcon game={drawer} className="w-32 h-32 object-contain shrink-0" alt="" />
-                <div className="flex min-w-0 flex-1 flex-col gap-2 justify-center">
+            {/* Row 1: icon + meta */}
+            {isMobilePortrait ? (
+              <div
+                className="p-4 pb-3 pt-10 shrink-0"
+                style={{ borderBottom: "1px solid #1e293b" }}
+              >
+                <div className="flex items-center gap-4">
+                  <GameIcon
+                    game={drawer}
+                    className="w-32 h-32 object-contain shrink-0"
+                    alt=""
+                  />
+                  <div className="flex min-w-0 flex-1 flex-col gap-2 justify-center">
+                    {drawer.thirdParty ? (
+                      <span
+                        className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
+                        style={partnerTagGoldStyle}
+                      >
+                        Partner site
+                      </span>
+                    ) : drawer.tags.includes("starter") ? (
+                      <span
+                        className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
+                        style={starterTagStyle}
+                      >
+                        Starter app
+                      </span>
+                    ) : null}
+                    <div className="flex flex-col gap-1">
+                      <h2 className="text-2xl font-black text-white leading-tight">
+                        {drawer.name}
+                      </h2>
+                      {drawer.buildStamp && !drawer.thirdParty && (
+                        <p className="text-[10px] leading-none text-sky-300/10 transition-colors hover:text-sky-300/80">
+                          Build {drawer.buildStamp}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {getLaunchLevels(drawer).length > 0 ? (
+                        <LevelLaunchButtons
+                          levels={getLaunchLevels(drawer)}
+                          onSelect={(level) => {
+                            startPlay(drawer, level);
+                            if (!drawer.openInNewTab) closeDrawer();
+                          }}
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            startPlay(drawer);
+                            if (!drawer.openInNewTab) closeDrawer();
+                          }}
+                          className="self-start rounded-xl px-6 py-2 text-sm font-bold text-black cursor-pointer transition-all"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, #4ade80, #16a34a)",
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLElement).style.background =
+                              "linear-gradient(135deg, #86efac, #22c55e)";
+                            (e.currentTarget as HTMLElement).style.transform =
+                              "scale(1.03)";
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLElement).style.background =
+                              "linear-gradient(135deg, #4ade80, #16a34a)";
+                            (e.currentTarget as HTMLElement).style.transform =
+                              "scale(1)";
+                          }}
+                        >
+                          {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
+                        </button>
+                      )}
+                    </div>
+                    {drawer.thirdParty && !drawer.openInNewTab && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          window.open(
+                            drawer.url,
+                            "_blank",
+                            "noopener,noreferrer",
+                          );
+                          closeDrawer();
+                        }}
+                        className="w-full rounded-xl px-5 py-2 text-sm font-bold cursor-pointer transition-all"
+                        style={{
+                          background: "#1e293b",
+                          color: "#e2e8f0",
+                          border: "1px solid #475569",
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.borderColor =
+                            "#38bdf8";
+                          (e.currentTarget as HTMLElement).style.color =
+                            "#38bdf8";
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.borderColor =
+                            "#475569";
+                          (e.currentTarget as HTMLElement).style.color =
+                            "#e2e8f0";
+                        }}
+                      >
+                        ↗ New tab
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-1">
+                  {drawer.skills.slice(0, 4).map((s, i) => (
+                    <span
+                      key={s}
+                      className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                      style={{
+                        background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
+                        color: SKILL_COLORS[i % SKILL_COLORS.length].color,
+                        border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+                {drawer.thirdParty && (
+                  <p
+                    className="mt-3 max-w-full text-[10px] leading-snug"
+                    style={{ color: "#64748b", wordBreak: "break-all" }}
+                    title={drawer.url}
+                  >
+                    {drawer.url}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div
+                className="flex gap-5 p-4 pb-3 pt-10 shrink-0"
+                style={{ borderBottom: "1px solid #1e293b" }}
+              >
+                <GameIcon
+                  game={drawer}
+                  className="w-40 h-40 object-contain shrink-0"
+                  alt=""
+                />
+                <div className="flex flex-col gap-4 justify-center min-w-0">
                   {drawer.thirdParty ? (
                     <span
                       className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
@@ -1113,15 +1509,32 @@ export default function App() {
                       Starter app
                     </span>
                   ) : null}
-                  <div className="flex flex-col gap-1">
-                    <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
+                  <div className="flex flex-wrap gap-1">
+                    {drawer.skills.slice(0, 4).map((s, i) => (
+                      <span
+                        key={s}
+                        className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                        style={{
+                          background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
+                          color: SKILL_COLORS[i % SKILL_COLORS.length].color,
+                          border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
+                        }}
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
+                    <h2 className="text-2xl font-black text-white leading-tight">
+                      {drawer.name}
+                    </h2>
                     {drawer.buildStamp && !drawer.thirdParty && (
-                      <p className="text-[10px] leading-none text-sky-300/10 transition-colors hover:text-sky-300/80">
+                      <p className="pb-0.5 text-[10px] leading-none text-sky-300/10 transition-colors hover:text-sky-300/80">
                         Build {drawer.buildStamp}
                       </p>
                     )}
                   </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {getLaunchLevels(drawer).length > 0 ? (
                       <LevelLaunchButtons
                         levels={getLaunchLevels(drawer)}
@@ -1137,198 +1550,88 @@ export default function App() {
                           startPlay(drawer);
                           if (!drawer.openInNewTab) closeDrawer();
                         }}
-                        className="self-start rounded-xl px-6 py-2 text-sm font-bold text-black cursor-pointer transition-all"
-                        style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
+                        className="px-6 py-2 rounded-xl font-bold text-sm text-black cursor-pointer transition-all"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #4ade80, #16a34a)",
+                        }}
                         onMouseEnter={(e) => {
                           (e.currentTarget as HTMLElement).style.background =
                             "linear-gradient(135deg, #86efac, #22c55e)";
-                          (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
+                          (e.currentTarget as HTMLElement).style.transform =
+                            "scale(1.03)";
                         }}
                         onMouseLeave={(e) => {
                           (e.currentTarget as HTMLElement).style.background =
                             "linear-gradient(135deg, #4ade80, #16a34a)";
-                          (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                          (e.currentTarget as HTMLElement).style.transform =
+                            "scale(1)";
                         }}
                       >
                         {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
                       </button>
                     )}
+                    {drawer.thirdParty && !drawer.openInNewTab && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          window.open(
+                            drawer.url,
+                            "_blank",
+                            "noopener,noreferrer",
+                          );
+                          closeDrawer();
+                        }}
+                        className="px-5 py-2 rounded-xl font-bold text-sm cursor-pointer transition-all"
+                        style={{
+                          background: "#1e293b",
+                          color: "#e2e8f0",
+                          border: "1px solid #475569",
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.borderColor =
+                            "#38bdf8";
+                          (e.currentTarget as HTMLElement).style.color =
+                            "#38bdf8";
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.borderColor =
+                            "#475569";
+                          (e.currentTarget as HTMLElement).style.color =
+                            "#e2e8f0";
+                        }}
+                      >
+                        ↗ New tab
+                      </button>
+                    )}
                   </div>
-                  {drawer.thirdParty && !drawer.openInNewTab && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        window.open(drawer.url, "_blank", "noopener,noreferrer");
-                        closeDrawer();
-                      }}
-                      className="w-full rounded-xl px-5 py-2 text-sm font-bold cursor-pointer transition-all"
-                      style={{
-                        background: "#1e293b",
-                        color: "#e2e8f0",
-                        border: "1px solid #475569",
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.borderColor = "#38bdf8";
-                        (e.currentTarget as HTMLElement).style.color = "#38bdf8";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.borderColor = "#475569";
-                        (e.currentTarget as HTMLElement).style.color = "#e2e8f0";
-                      }}
+                  {drawer.thirdParty && (
+                    <p
+                      className="mt-2 max-w-full text-[10px] leading-snug"
+                      style={{ color: "#64748b", wordBreak: "break-all" }}
+                      title={drawer.url}
                     >
-                      ↗ New tab
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-1">
-                {drawer.skills.slice(0, 4).map((s, i) => (
-                  <span
-                    key={s}
-                    className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                    style={{
-                      background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
-                      color: SKILL_COLORS[i % SKILL_COLORS.length].color,
-                      border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
-                    }}
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-              {drawer.thirdParty && (
-                <p
-                  className="mt-3 max-w-full text-[10px] leading-snug"
-                  style={{ color: "#64748b", wordBreak: "break-all" }}
-                  title={drawer.url}
-                >
-                  {drawer.url}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="flex gap-5 p-4 pb-3 pt-10 shrink-0" style={{ borderBottom: "1px solid #1e293b" }}>
-              <GameIcon game={drawer} className="w-40 h-40 object-contain shrink-0" alt="" />
-              <div className="flex flex-col gap-4 justify-center min-w-0">
-                {drawer.thirdParty ? (
-                  <span
-                    className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
-                    style={partnerTagGoldStyle}
-                  >
-                    Partner site
-                  </span>
-                ) : drawer.tags.includes("starter") ? (
-                  <span
-                    className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
-                    style={starterTagStyle}
-                  >
-                    Starter app
-                  </span>
-                ) : null}
-                <div className="flex flex-wrap gap-1">
-                  {drawer.skills.slice(0, 4).map((s, i) => (
-                    <span
-                      key={s}
-                      className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                      style={{
-                        background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
-                        color: SKILL_COLORS[i % SKILL_COLORS.length].color,
-                        border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
-                      }}
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
-                  <h2 className="text-2xl font-black text-white leading-tight">{drawer.name}</h2>
-                  {drawer.buildStamp && !drawer.thirdParty && (
-                    <p className="pb-0.5 text-[10px] leading-none text-sky-300/10 transition-colors hover:text-sky-300/80">
-                      Build {drawer.buildStamp}
+                      {drawer.url}
                     </p>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {getLaunchLevels(drawer).length > 0 ? (
-                    <LevelLaunchButtons
-                      levels={getLaunchLevels(drawer)}
-                      onSelect={(level) => {
-                        startPlay(drawer, level);
-                        if (!drawer.openInNewTab) closeDrawer();
-                      }}
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        startPlay(drawer);
-                        if (!drawer.openInNewTab) closeDrawer();
-                      }}
-                      className="px-6 py-2 rounded-xl font-bold text-sm text-black cursor-pointer transition-all"
-                      style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.background =
-                          "linear-gradient(135deg, #86efac, #22c55e)";
-                        (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.background =
-                          "linear-gradient(135deg, #4ade80, #16a34a)";
-                        (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-                      }}
-                    >
-                      {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
-                    </button>
-                  )}
-                  {drawer.thirdParty && !drawer.openInNewTab && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        window.open(drawer.url, "_blank", "noopener,noreferrer");
-                        closeDrawer();
-                      }}
-                      className="px-5 py-2 rounded-xl font-bold text-sm cursor-pointer transition-all"
-                      style={{
-                        background: "#1e293b",
-                        color: "#e2e8f0",
-                        border: "1px solid #475569",
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.borderColor = "#38bdf8";
-                        (e.currentTarget as HTMLElement).style.color = "#38bdf8";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.borderColor = "#475569";
-                        (e.currentTarget as HTMLElement).style.color = "#e2e8f0";
-                      }}
-                    >
-                      ↗ New tab
-                    </button>
-                  )}
-                </div>
-                {drawer.thirdParty && (
-                  <p
-                    className="mt-2 max-w-full text-[10px] leading-snug"
-                    style={{ color: "#64748b", wordBreak: "break-all" }}
-                    title={drawer.url}
-                  >
-                    {drawer.url}
-                  </p>
-                )}
               </div>
-            </div>
-          )}
-
-          <div className="lg:flex-1 lg:overflow-y-auto">
-            {(drawer.videoUrl || drawer.screenshots.length > 0) && (
-              <ScreenshotCarousel screenshots={drawer.screenshots} videoUrl={drawer.videoUrl} name={drawer.name} />
             )}
 
-            {/* Row 2: description */}
-            <div className="shrink-0 p-6">
-              {renderDescription(drawer.description, drawer.teachesLevels)}
+            <div className="lg:flex-1 lg:overflow-y-auto">
+              {(drawer.videoUrl || drawer.screenshots.length > 0) && (
+                <ScreenshotCarousel
+                  screenshots={drawer.screenshots}
+                  videoUrl={drawer.videoUrl}
+                  name={drawer.name}
+                />
+              )}
+
+              {/* Row 2: description */}
+              <div className="shrink-0 p-6">
+                {renderDescription(drawer.description, drawer.teachesLevels)}
+              </div>
             </div>
-          </div>
           </div>
         </>
       )}
@@ -1342,12 +1645,45 @@ export default function App() {
           aria-controls="shell-social-share-drawer"
           aria-label="Open share panel"
         >
-          <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
-            <circle cx="18" cy="5.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
-            <circle cx="6" cy="12" r="2.25" stroke="currentColor" strokeWidth="1.9" />
-            <circle cx="18" cy="18.5" r="2.25" stroke="currentColor" strokeWidth="1.9" />
-            <path d="M8.1 10.95 15.9 6.55" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-            <path d="M8.1 13.05 15.9 17.45" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+          <svg
+            viewBox="0 0 24 24"
+            className="shell-social-launcher-icon"
+            fill="none"
+            aria-hidden="true"
+          >
+            <circle
+              cx="18"
+              cy="5.5"
+              r="2.25"
+              stroke="currentColor"
+              strokeWidth="1.9"
+            />
+            <circle
+              cx="6"
+              cy="12"
+              r="2.25"
+              stroke="currentColor"
+              strokeWidth="1.9"
+            />
+            <circle
+              cx="18"
+              cy="18.5"
+              r="2.25"
+              stroke="currentColor"
+              strokeWidth="1.9"
+            />
+            <path
+              d="M8.1 10.95 15.9 6.55"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+            />
+            <path
+              d="M8.1 13.05 15.9 17.45"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+            />
           </svg>
         </button>
         <button
@@ -1358,8 +1694,19 @@ export default function App() {
           aria-controls="shell-social-comments-drawer"
           aria-label="Open comments panel"
         >
-          <svg viewBox="0 0 24 24" className="shell-social-launcher-icon" fill="none" aria-hidden="true">
-            <path d="M6 6.5h12a2.5 2.5 0 0 1 2.5 2.5v6a2.5 2.5 0 0 1-2.5 2.5H10l-4 3v-3H6A2.5 2.5 0 0 1 3.5 15V9A2.5 2.5 0 0 1 6 6.5Z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            viewBox="0 0 24 24"
+            className="shell-social-launcher-icon"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M6 6.5h12a2.5 2.5 0 0 1 2.5 2.5v6a2.5 2.5 0 0 1-2.5 2.5H10l-4 3v-3H6A2.5 2.5 0 0 1 3.5 15V9A2.5 2.5 0 0 1 6 6.5Z"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
       </div>
@@ -1369,8 +1716,14 @@ export default function App() {
       )}
 
       {showSettingsModal && (
-        <div className="settings-overlay" onClick={() => setShowSettingsModal(false)}>
-          <div className="settings-card" onClick={(event) => event.stopPropagation()}>
+        <div
+          className="settings-overlay"
+          onClick={() => setShowSettingsModal(false)}
+        >
+          <div
+            className="settings-card"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="settings-header">
               <p className="settings-kicker">Settings</p>
               <button
@@ -1387,7 +1740,10 @@ export default function App() {
               <span className="settings-label-group">
                 <span
                   className="settings-label"
-                  style={{ color: notificationPreference === "on" ? "#fde047" : undefined }}
+                  style={{
+                    color:
+                      notificationPreference === "on" ? "#fde047" : undefined,
+                  }}
                 >
                   Notifications
                 </span>
@@ -1401,7 +1757,11 @@ export default function App() {
                     }}
                     disabled={pushState === "sending"}
                   >
-                    {pushState === "sending" ? "Sending..." : pushState === "sent" ? "Sent" : "Push"}
+                    {pushState === "sending"
+                      ? "Sending..."
+                      : pushState === "sent"
+                        ? "Sent"
+                        : "Push"}
                   </button>
                 )}
               </span>
@@ -1442,7 +1802,9 @@ export default function App() {
         style={{
           right: "1rem",
           bottom: "1rem",
-          transform: showShareDrawer ? "translateY(0)" : "translateY(calc(100% + 1rem))",
+          transform: showShareDrawer
+            ? "translateY(0)"
+            : "translateY(calc(100% + 1rem))",
           background: "rgba(2,6,23,0.97)",
           border: "3px solid rgba(56,189,248,0.4)",
           borderRadius: "16px",
@@ -1451,9 +1813,19 @@ export default function App() {
           maxWidth: "calc(100vw - 2rem)",
         }}
       >
-        <div className="shell-social-drawer-header" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div
+          className="shell-social-drawer-header"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+        >
           <div className="shell-social-share-title">Spread the word...</div>
-          <button type="button" onClick={() => setShowShareDrawer(false)} className="shell-social-drawer-close" aria-label="Close share drawer">✕</button>
+          <button
+            type="button"
+            onClick={() => setShowShareDrawer(false)}
+            className="shell-social-drawer-close"
+            aria-label="Close share drawer"
+          >
+            ✕
+          </button>
         </div>
         <SocialShare />
       </div>
@@ -1479,12 +1851,22 @@ export default function App() {
             Add Comment
           </button>
           <div className="shell-social-comments-actions">
-            <button type="button" onClick={closeCommentsDrawer} className="shell-social-drawer-close shell-social-drawer-close-comments" aria-label="Close comments drawer">✕</button>
+            <button
+              type="button"
+              onClick={closeCommentsDrawer}
+              className="shell-social-drawer-close shell-social-drawer-close-comments"
+              aria-label="Close comments drawer"
+            >
+              ✕
+            </button>
           </div>
         </div>
         <div className="shell-social-comments-shell">
           {showCommentsDrawer ? (
-            <SocialComments composeRequest={commentComposeRequest} reloadRequest={commentReloadRequest} />
+            <SocialComments
+              composeRequest={commentComposeRequest}
+              reloadRequest={commentReloadRequest}
+            />
           ) : null}
         </div>
       </div>
