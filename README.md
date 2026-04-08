@@ -4,6 +4,8 @@ See Maths is a host app for a collection of individual maths mini-apps. It does 
 
 The goal of this project is to give students and teachers a single entry point into multiple interactive maths experiences without needing a separate launcher for every app.
 
+The production site is hosted at [https://www.seemaths.com](https://www.seemaths.com).
+
 ## What This App Does
 
 - Loads a list of child app URLs from JSON files in `public/`
@@ -14,6 +16,13 @@ The goal of this project is to give students and teachers a single entry point i
 - Supports installable PWA behavior for the shell itself
 
 In short: this repo is the platform shell. The actual maths experiences live in separate apps.
+
+## Current App GitHub Repos
+
+- [Ripple Touch](https://github.com/anandamarsh/maths-game-template)
+- [Trail Distances](https://github.com/anandamarsh/maths-distance-calculator)
+- [Angle Explorer](https://github.com/anandamarsh/maths-angle-explorer)
+- Loci Complex currently does not expose a public GitHub repository link in this shell's app metadata.
 
 ## How It Works
 
