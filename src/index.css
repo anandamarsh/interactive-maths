@@ -287,11 +287,11 @@ body {
   }
 
   .app-youtube-bubble {
-    width: min(210px, calc(100vw - 1.5rem));
+    width: min(310px, calc(100vw - 1.5rem));
   }
 
   .app-youtube-bubble-copy {
-    max-width: 16rem;
+    max-width: 24rem;
   }
 
   .app-youtube-bubble-dismiss {
