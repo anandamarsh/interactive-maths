@@ -8,6 +8,7 @@ import {
   loadGamesListProgressively,
 } from "./games";
 import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
+import { installEmbeddedStorageBridge } from "./utils/embeddedStorageBridge";
 
 const SHELL_GITHUB_URL = "https://github.com/anandamarsh/see-maths";
 const SHELL_YOUTUBE_URL = "https://www.youtube.com/@SeeMaths0";
@@ -1218,6 +1219,8 @@ export default function App() {
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, []);
+
+  useEffect(() => installEmbeddedStorageBridge(), []);
 
   if (active) {
     return (
