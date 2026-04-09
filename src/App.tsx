@@ -31,6 +31,22 @@ function GitHubIcon({ className = "" }: { className?: string }) {
   );
 }
 
+function PersonIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.05 0-7 2.07-7 4.5 0 .28.22.5.5.5h13a.5.5 0 0 0 .5-.5C19 16.07 16.05 14 12 14Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 function EyesLogo({ className = "" }: { className?: string }) {
   return (
     <svg
@@ -257,6 +273,141 @@ function titleCaseLevelBody(body: string) {
     (_match, words, spacing) => {
       return `${words}${spacing}`;
     },
+  );
+}
+
+function getGitHubOwner(githubUrl?: string): string | null {
+  if (!githubUrl) return null;
+  try {
+    const parsed = new URL(githubUrl);
+    if (!parsed.hostname.includes("github.com")) return null;
+    const [owner] = parsed.pathname.split("/").filter(Boolean);
+    return owner ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function getGitHubAvatarUrl(githubUrl?: string): string | null {
+  const owner = getGitHubOwner(githubUrl);
+  if (!owner) return null;
+  return `https://github.com/${owner}.png?size=80`;
+}
+
+function getGitHubProfileUrl(githubUrl?: string): string | null {
+  const owner = getGitHubOwner(githubUrl);
+  if (!owner) return null;
+  return `https://github.com/${owner}`;
+}
+
+function AuthorAvatarButton({
+  githubUrl,
+  className = "",
+  tooltipClassName = "",
+}: {
+  githubUrl?: string;
+  className?: string;
+  tooltipClassName?: string;
+}) {
+  const owner = useMemo(() => getGitHubOwner(githubUrl), [githubUrl]);
+  const avatarUrl = useMemo(() => getGitHubAvatarUrl(githubUrl), [githubUrl]);
+  const profileUrl = useMemo(() => getGitHubProfileUrl(githubUrl), [githubUrl]);
+  const [imageFailed, setImageFailed] = useState(false);
+  const [authorLabel, setAuthorLabel] = useState<string | null>(owner);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [avatarUrl]);
+
+  useEffect(() => {
+    setAuthorLabel(owner);
+    if (!owner) return;
+
+    const controller = new AbortController();
+
+    fetch(`https://api.github.com/users/${owner}`, {
+      signal: controller.signal,
+      headers: {
+        Accept: "application/vnd.github+json",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`GitHub user lookup failed (${response.status})`);
+        return response.json() as Promise<{ name?: string; login?: string }>;
+      })
+      .then((payload) => {
+        const login = payload.login?.trim() || owner;
+        const name = payload.name?.trim();
+        setAuthorLabel(name ? `${name} (@${login})` : `@${login}`);
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setAuthorLabel(`@${owner}`);
+      });
+
+    return () => controller.abort();
+  }, [owner]);
+
+  const tooltipLabel = authorLabel ?? "Author";
+
+  return (
+    <div
+      className={`group ${className}`.trim()}
+      aria-label={tooltipLabel}
+    >
+      <div
+        className={`pointer-events-none absolute right-0 bottom-full mb-2 whitespace-nowrap rounded-full px-2 py-1 text-[10px] font-bold text-slate-50 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 ${tooltipClassName}`.trim()}
+        style={{
+          background: "rgba(15,23,42,0.96)",
+          border: "1px solid rgba(250,204,21,0.65)",
+          boxShadow: "0 10px 20px rgba(2,6,23,0.45)",
+        }}
+      >
+        {tooltipLabel}
+      </div>
+      <div
+        role="button"
+        tabIndex={0}
+        className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full"
+        style={{
+          background: "linear-gradient(180deg, rgba(30,41,59,0.96), rgba(15,23,42,0.96))",
+          border: "2px solid rgba(250,204,21,0.9)",
+          boxShadow: "0 8px 20px rgba(2,6,23,0.45)",
+        }}
+        title={tooltipLabel}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (profileUrl) window.open(profileUrl, "_blank", "noopener,noreferrer");
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          event.stopPropagation();
+          if (profileUrl) window.open(profileUrl, "_blank", "noopener,noreferrer");
+        }}
+      >
+        {avatarUrl && !imageFailed ? (
+          <img
+            src={avatarUrl}
+            alt=""
+            className="h-full w-full object-cover"
+            referrerPolicy="no-referrer"
+            onError={() => setImageFailed(true)}
+          />
+        ) : (
+          <PersonIcon className="h-5 w-5 text-slate-200" />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GameAuthorBadge({ githubUrl }: { githubUrl?: string }) {
+  return (
+    <AuthorAvatarButton
+      githubUrl={githubUrl}
+      className="absolute right-2 bottom-2 z-20"
+    />
   );
 }
 
@@ -598,6 +749,7 @@ function LevelLaunchButtons({
 const notificationPreferenceKey = "see-maths:comment-notifications";
 const legacyNotificationPreferenceKey =
   "interactive-maths:comment-notifications";
+const youtubeBubbleDismissedKey = "see-maths:youtube-bubble-dismissed";
 
 function readNotificationPreference() {
   if (typeof window === "undefined") return "off";
@@ -606,6 +758,11 @@ function readNotificationPreference() {
     window.localStorage.getItem(legacyNotificationPreferenceKey) ??
     "off"
   );
+}
+
+function readYouTubeBubbleDismissed() {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(youtubeBubbleDismissedKey) === "true";
 }
 
 function toYouTubeEmbedUrl(url: string): string | null {
@@ -804,6 +961,9 @@ export default function App() {
   const [notificationPreference, setNotificationPreference] = useState(
     readNotificationPreference,
   );
+  const [youtubeBubbleDismissed, setYoutubeBubbleDismissed] = useState(
+    readYouTubeBubbleDismissed,
+  );
   const [pushState, setPushState] = useState<
     "idle" | "sending" | "sent" | "error"
   >("idle");
@@ -892,6 +1052,13 @@ export default function App() {
       notificationPreference,
     );
   }, [notificationPreference]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      youtubeBubbleDismissedKey,
+      youtubeBubbleDismissed ? "true" : "false",
+    );
+  }, [youtubeBubbleDismissed]);
 
   const openDrawer = (g: Game) => {
     closeSocialDrawers();
@@ -1094,20 +1261,62 @@ export default function App() {
       className="min-h-[100lvh] px-6 py-10"
       style={{ backgroundColor: "transparent" }}
     >
-      <div className="app-shell-actions">
-        <a
-          href={SHELL_YOUTUBE_URL}
-          target="_blank"
-          rel="noreferrer"
-          title="Open YouTube channel"
-          className="app-settings-button app-settings-button-plain"
-        >
-          <img
-            src={SHELL_YOUTUBE_ICON_URL}
-            alt="YouTube"
-            className="app-settings-icon"
-          />
-        </a>
+      <div
+        className="app-shell-actions"
+        style={{
+          opacity: showSettingsModal ? 0 : 1,
+          pointerEvents: showSettingsModal ? "none" : "auto",
+        }}
+        aria-hidden={showSettingsModal}
+      >
+        <div className="app-youtube-cta">
+          {!youtubeBubbleDismissed ? (
+            <div
+              className="app-youtube-bubble"
+              role="complementary"
+              aria-label="YouTube channel prompt"
+            >
+              <a
+                href={SHELL_YOUTUBE_URL}
+                target="_blank"
+                rel="noreferrer"
+                title="Open YouTube channel"
+                className="app-youtube-bubble-link"
+              >
+                <span className="app-youtube-bubble-icon-shell">
+                  <img
+                    src={SHELL_YOUTUBE_ICON_URL}
+                    alt="YouTube"
+                    className="app-settings-icon"
+                  />
+                </span>
+                <span className="app-youtube-bubble-copy">
+                  View and subscribe to our YouTube channel.
+                </span>
+              </a>
+              <button
+                type="button"
+                className="app-youtube-bubble-dismiss"
+                onClick={() => setYoutubeBubbleDismissed(true)}
+              >
+                Don&apos;t show again
+              </button>
+            </div>
+          ) : null}
+          <a
+            href={SHELL_YOUTUBE_URL}
+            target="_blank"
+            rel="noreferrer"
+            title="Open YouTube channel"
+            className="app-settings-button app-settings-button-plain"
+          >
+            <img
+              src={SHELL_YOUTUBE_ICON_URL}
+              alt="YouTube"
+              className="app-settings-icon"
+            />
+          </a>
+        </div>
         <a
           href={SHELL_GITHUB_URL}
           target="_blank"
@@ -1169,7 +1378,7 @@ export default function App() {
                 <button
                   key={slot.slotId}
                   onClick={() => openDrawer(slot.game!)}
-                  className="relative flex flex-col items-center gap-3 overflow-hidden rounded-2xl p-2 pt-3 text-center transition-all cursor-pointer"
+                  className="relative flex w-full max-w-[206px] justify-self-center flex-col items-center gap-3 overflow-hidden rounded-2xl p-2 pt-3 text-center transition-all cursor-pointer"
                   style={{ background: "#0f172a", border: "1px solid #1e293b" }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLElement).style.boxShadow =
@@ -1238,7 +1447,7 @@ export default function App() {
                       {slot.game.name}
                     </div>
                   </div>
-                  <div className="flex flex-wrap justify-center gap-1">
+                  <div className="flex w-full flex-wrap justify-start gap-1 pl-2 pr-12">
                     {slot.game.tags.slice(0, 2).map((t, i) => (
                       <span
                         key={t}
@@ -1253,6 +1462,7 @@ export default function App() {
                       </span>
                     ))}
                   </div>
+                  <GameAuthorBadge githubUrl={slot.game.githubUrl} />
                 </button>
               ) : (
                 <LoadingCard key={slot.slotId} slot={slot} />
@@ -1305,6 +1515,14 @@ export default function App() {
                 <GitHubIcon className="detail-github-icon" />
               </a>
             ) : null}
+
+            {isMobilePortrait ? (
+              <AuthorAvatarButton
+                githubUrl={drawer.githubUrl}
+                className="relative z-[60]"
+              />
+            ) : null}
+
           </div>
 
           {/* Close button */}
@@ -1376,9 +1594,11 @@ export default function App() {
                       </span>
                     ) : null}
                     <div className="flex flex-col gap-1">
-                      <h2 className="text-2xl font-black text-white leading-tight">
-                        {drawer.name}
-                      </h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-2xl font-black text-white leading-tight">
+                          {drawer.name}
+                        </h2>
+                      </div>
                       {drawer.buildStamp && !drawer.thirdParty && (
                         <p className="text-[10px] leading-none text-sky-300/10 transition-colors hover:text-sky-300/80">
                           Build {drawer.buildStamp}
@@ -1524,10 +1744,16 @@ export default function App() {
                       </span>
                     ))}
                   </div>
-                  <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
-                    <h2 className="text-2xl font-black text-white leading-tight">
-                      {drawer.name}
-                    </h2>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-2xl font-black text-white leading-tight">
+                        {drawer.name}
+                      </h2>
+                      <AuthorAvatarButton
+                        githubUrl={drawer.githubUrl}
+                        className="relative shrink-0"
+                      />
+                    </div>
                     {drawer.buildStamp && !drawer.thirdParty && (
                       <p className="pb-0.5 text-[10px] leading-none text-sky-300/10 transition-colors hover:text-sky-300/80">
                         Build {drawer.buildStamp}

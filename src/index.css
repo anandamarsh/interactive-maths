@@ -199,6 +199,104 @@ body {
   z-index: 40;
   display: flex;
   gap: 0.6rem;
+  align-items: flex-end;
+}
+
+.app-youtube-cta {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
+.app-youtube-bubble {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 0.8rem);
+  width: min(310px, calc(100vw - 2rem));
+  padding: 0.95rem 1rem 0.8rem;
+  border: 3px solid #fef08a;
+  border-radius: 1.2rem;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.98));
+  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.72);
+}
+
+.app-youtube-bubble::after {
+  content: "";
+  position: absolute;
+  left: 1.05rem;
+  bottom: -0.7rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  background: #020617;
+  border-right: 3px solid #fef08a;
+  border-bottom: 3px solid #fef08a;
+  transform: rotate(45deg);
+}
+
+.app-youtube-bubble-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #f8fafc;
+  text-decoration: none;
+}
+
+.app-youtube-bubble-icon-shell {
+  flex: 0 0 auto;
+  width: 2.7rem;
+  height: 2.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: 3px solid #fef08a;
+  border-radius: 9999px;
+}
+
+.app-youtube-bubble-copy {
+  max-width: 24rem;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.app-youtube-bubble-dismiss {
+  margin-top: 0.65rem;
+  margin-left: 3.7rem;
+  display: inline-flex;
+  border: 0;
+  background: transparent;
+  color: #93c5fd;
+  font-size: 0.77rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.app-youtube-bubble-dismiss:hover {
+  color: #dbeafe;
+}
+
+@media (max-width: 640px) {
+  .app-shell-actions {
+    left: 0.75rem;
+    bottom: 0.75rem;
+  }
+
+  .app-youtube-bubble {
+    width: min(210px, calc(100vw - 1.5rem));
+  }
+
+  .app-youtube-bubble-copy {
+    max-width: 16rem;
+  }
+
+  .app-youtube-bubble-dismiss {
+    margin-left: 0;
+  }
 }
 
 .app-settings-icon {
@@ -225,7 +323,7 @@ body {
 .settings-overlay {
   position: fixed;
   inset: 0;
-  z-index: 95;
+  z-index: 220;
   display: flex;
   align-items: center;
   justify-content: center;

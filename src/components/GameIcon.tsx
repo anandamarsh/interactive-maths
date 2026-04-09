@@ -12,16 +12,16 @@ export function GameIcon({
   className?: string;
   alt?: string;
 }) {
-  if (game.thirdParty) {
-    return <PartnerGameGlyph className={className} />;
-  }
-
   const candidates = useMemo(() => getGameIconCandidates(game), [game]);
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
     setIndex(0);
   }, [game.id, game.url]);
+
+  if (game.thirdParty) {
+    return <PartnerGameGlyph className={className} />;
+  }
 
   const src = candidates[index];
 
