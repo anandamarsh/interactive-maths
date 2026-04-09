@@ -14,10 +14,14 @@
 
 ## Shared Keys
 
-- `interactive-maths:youtubeBubbleDismissed`
 - `interactive-maths:reportName`
 - `interactive-maths:reportEmail`
 - `interactive-maths:locale`
+
+## App-Specific Keys
+
+- `interactive-maths:distance-calculator:youtubeBubbleDismissed`
+- `interactive-maths:angle-explorer:youtubeBubbleDismissed`
 
 ## Verification
 
