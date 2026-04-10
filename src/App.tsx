@@ -2104,16 +2104,16 @@ export default function App() {
             </div>
 
             <div className="settings-switch-row">
-              <strong
-                style={{
-                  display: "block",
-                  color: "#f8fafc",
-                  fontSize: "0.95rem",
-                }}
-              >
-                Notifications
-              </strong>
               <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
+                <strong
+                  style={{
+                    display: "block",
+                    color: "#f8fafc",
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  Notifications
+                </strong>
                 <button
                   type="button"
                   className="settings-push-button"
@@ -2122,31 +2122,31 @@ export default function App() {
                 >
                   {commentNotificationsTesting ? "SENDING…" : "TEST"}
                 </button>
-                <button
-                  type="button"
-                  className="settings-switch"
-                  role="switch"
-                  aria-checked={commentNotificationsEnabled}
-                  aria-label="Toggle See Maths comment notifications"
-                  onClick={() => void toggleCommentNotifications()}
-                  disabled={commentNotificationsBusy || commentNotificationsTesting}
+              </div>
+              <button
+                type="button"
+                className="settings-switch"
+                role="switch"
+                aria-checked={commentNotificationsEnabled}
+                aria-label="Toggle See Maths comment notifications"
+                onClick={() => void toggleCommentNotifications()}
+                disabled={commentNotificationsBusy || commentNotificationsTesting}
+              >
+                <span
+                  className="settings-switch-track"
+                  style={{
+                    background: commentNotificationsEnabled ? "#ca8a04" : "#334155",
+                    opacity: commentNotificationsBusy || commentNotificationsTesting ? 0.75 : 1,
+                  }}
                 >
                   <span
-                    className="settings-switch-track"
+                    className="settings-switch-thumb"
                     style={{
-                      background: commentNotificationsEnabled ? "#ca8a04" : "#334155",
-                      opacity: commentNotificationsBusy || commentNotificationsTesting ? 0.75 : 1,
+                      transform: commentNotificationsEnabled ? "translateX(1.4rem)" : "translateX(0)",
                     }}
-                  >
-                    <span
-                      className="settings-switch-thumb"
-                      style={{
-                        transform: commentNotificationsEnabled ? "translateX(1.4rem)" : "translateX(0)",
-                      }}
-                    />
-                  </span>
-                </button>
-              </div>
+                  />
+                </span>
+              </button>
             </div>
             {commentNotificationsError ? (
               <small
