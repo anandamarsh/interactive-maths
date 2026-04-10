@@ -7,7 +7,7 @@ import {
   createGameSlot,
   loadGamesListProgressively,
 } from "./games";
-import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
+import { disablePushSubscription } from "./pushNotifications";
 import { installEmbeddedStorageBridge } from "./utils/embeddedStorageBridge";
 import {
   analyticsHeartbeatIntervalMs,
@@ -757,19 +757,7 @@ function LevelLaunchButtons({
   );
 }
 
-const notificationPreferenceKey = "see-maths:comment-notifications";
-const legacyNotificationPreferenceKey =
-  "interactive-maths:comment-notifications";
 const youtubeBubbleDismissedKey = "see-maths:youtube-bubble-dismissed";
-
-function readNotificationPreference() {
-  if (typeof window === "undefined") return "off";
-  return (
-    window.localStorage.getItem(notificationPreferenceKey) ??
-    window.localStorage.getItem(legacyNotificationPreferenceKey) ??
-    "off"
-  );
-}
 
 function readYouTubeBubbleDismissed() {
   if (typeof window === "undefined") return false;
@@ -969,16 +957,9 @@ export default function App() {
   const [commentComposeRequest, setCommentComposeRequest] = useState(0);
   const [commentReloadRequest, setCommentReloadRequest] = useState(0);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [notificationPreference, setNotificationPreference] = useState(
-    readNotificationPreference,
-  );
   const [youtubeBubbleDismissed, setYoutubeBubbleDismissed] = useState(
     readYouTubeBubbleDismissed,
   );
-  const [pushState, setPushState] = useState<
-    "idle" | "sending" | "sent" | "error"
-  >("idle");
-  const [pushError, setPushError] = useState("");
   const [isMobileLandscape, setIsMobileLandscape] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 1024 && window.innerWidth > window.innerHeight;
@@ -1060,17 +1041,20 @@ export default function App() {
 
   useEffect(() => {
     window.localStorage.setItem(
-      notificationPreferenceKey,
-      notificationPreference,
-    );
-  }, [notificationPreference]);
-
-  useEffect(() => {
-    window.localStorage.setItem(
       youtubeBubbleDismissedKey,
       youtubeBubbleDismissed ? "true" : "false",
     );
   }, [youtubeBubbleDismissed]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.removeItem("see-maths:comment-notifications");
+    window.localStorage.removeItem("interactive-maths:comment-notifications");
+    void disablePushSubscription();
+  }, []);
 
   const openDrawer = (g: Game) => {
     closeSocialDrawers();
@@ -1096,61 +1080,6 @@ export default function App() {
   function closeCommentsDrawer() {
     setShowCommentsDrawer(false);
     setCommentReloadRequest((value) => value + 1);
-  }
-
-  async function enableNotifications() {
-    if (typeof window === "undefined" || !("Notification" in window)) {
-      setPushState("error");
-      setPushError("Notifications are not available in this browser.");
-      return;
-    }
-
-    setPushState("idle");
-    setPushError("");
-
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-      try {
-        await ensurePushSubscription();
-        setNotificationPreference("on");
-        return;
-      } catch (error) {
-        setNotificationPreference("off");
-        setPushState("error");
-        setPushError(
-          error instanceof Error
-            ? error.message
-            : "Failed to enable notifications.",
-        );
-        return;
-      }
-    }
-
-    setNotificationPreference("off");
-    setPushState("error");
-    setPushError("Notifications were not allowed.");
-  }
-
-  function disableNotifications() {
-    setNotificationPreference("off");
-    setPushState("idle");
-    setPushError("");
-  }
-
-  async function handleTestPush() {
-    setPushState("sending");
-    setPushError("");
-
-    try {
-      await sendTestPush();
-      setPushState("sent");
-      window.setTimeout(() => setPushState("idle"), 1800);
-    } catch (error) {
-      setPushState("error");
-      setPushError(
-        error instanceof Error ? error.message : "Push test failed.",
-      );
-    }
   }
 
   async function handleShare() {
@@ -2051,61 +1980,10 @@ export default function App() {
               </button>
             </div>
 
-            <div className="settings-switch-row">
-              <span className="settings-label-group">
-                <span
-                  className="settings-label"
-                  style={{
-                    color:
-                      notificationPreference === "on" ? "#fde047" : undefined,
-                  }}
-                >
-                  Notifications
-                </span>
-                {notificationPreference === "on" && (
-                  <button
-                    type="button"
-                    className="settings-push-button"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      void handleTestPush();
-                    }}
-                    disabled={pushState === "sending"}
-                  >
-                    {pushState === "sending"
-                      ? "Sending..."
-                      : pushState === "sent"
-                        ? "Sent"
-                        : "Push"}
-                  </button>
-                )}
-              </span>
-              <button
-                type="button"
-                className={`settings-switch ${notificationPreference === "on" ? "is-on" : ""}`}
-                role="switch"
-                aria-checked={notificationPreference === "on"}
-                aria-label="Toggle notifications"
-                onClick={() => {
-                  if (notificationPreference === "on") {
-                    disableNotifications();
-                    return;
-                  }
-
-                  void enableNotifications();
-                }}
-              >
-                <span className="settings-switch-track">
-                  <span className="settings-switch-thumb" />
-                </span>
-              </button>
-            </div>
-
-            {pushState === "error" && pushError && (
-              <p className="settings-note" style={{ color: "#fda4af" }}>
-                {pushError}
-              </p>
-            )}
+            <p className="settings-note">
+              Notifications are handled in DiscussIt Moderator only. Any old
+              See Maths push subscription is cleared automatically.
+            </p>
           </div>
         </div>
       )}

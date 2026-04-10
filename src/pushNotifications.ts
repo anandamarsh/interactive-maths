@@ -203,6 +203,26 @@ async function savePushSubscription(subscription: PushSubscription) {
   return payload;
 }
 
+async function deletePushSubscription(endpoint: string) {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return;
+  }
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/save-push-subscription`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: supabaseAnonKey,
+      Authorization: `Bearer ${supabaseAnonKey}`,
+    },
+    body: JSON.stringify({ endpoint }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response, "Failed to delete push subscription."));
+  }
+}
+
 export async function ensurePushSubscription() {
   requirePushConfig();
 
@@ -237,6 +257,32 @@ async function renewPushSubscription() {
   }
 
   return ensurePushSubscription();
+}
+
+export async function disablePushSubscription() {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+    return;
+  }
+
+  const scopeUrl = new URL("./", window.location.href);
+  const registration =
+    (await navigator.serviceWorker.getRegistration(scopeUrl.href)) ??
+    (await navigator.serviceWorker.getRegistration());
+
+  if (!registration) {
+    return;
+  }
+
+  const existing = await registration.pushManager.getSubscription();
+  if (!existing) {
+    return;
+  }
+
+  const endpoint = existing.endpoint;
+  await existing.unsubscribe().catch(() => {});
+  await deletePushSubscription(endpoint).catch((error) => {
+    console.warn("Failed to remove push subscription from server", error);
+  });
 }
 
 export async function sendTestPush() {
