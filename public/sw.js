@@ -1,4 +1,4 @@
-const CACHE_VERSION = "see-maths-v1";
+const CACHE_VERSION = "see-maths-v2";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const SCOPE_URL = new URL(self.registration.scope);
@@ -60,7 +60,16 @@ self.addEventListener("activate", (event) => {
           .filter((key) => ![APP_SHELL_CACHE, RUNTIME_CACHE].includes(key))
           .map((key) => caches.delete(key)),
       ),
-    ).then(() => self.clients.claim()),
+    ).then(async () => {
+      const subscription = await self.registration.pushManager.getSubscription().catch(() => null);
+      if (subscription) {
+        await subscription.unsubscribe().catch(() => {});
+      }
+
+      const notifications = await self.registration.getNotifications().catch(() => []);
+      await Promise.all(notifications.map((notification) => notification.close()));
+      await self.clients.claim();
+    }),
   );
 });
 
@@ -115,70 +124,4 @@ self.addEventListener("fetch", (event) => {
       }),
     );
   }
-});
-
-self.addEventListener("push", (event) => {
-  if (!event.data) {
-    return;
-  }
-
-  let payload = {};
-  try {
-    payload = event.data.json();
-  } catch {
-    payload = { body: event.data.text() };
-  }
-
-  const title = payload.title || "See Maths";
-  const body = payload.body || "You have a new notification.";
-  const url = resolveAppUrl(payload.url);
-  const tag = payload.tag || "see-maths-push";
-
-  event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      tag,
-      data: { url },
-      icon: new URL("./icon-192.png", SCOPE_URL).pathname,
-      badge: new URL("./icon-192.png", SCOPE_URL).pathname,
-    }),
-  );
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-
-  const targetUrl = new URL(resolveAppUrl(event.notification.data?.url), SCOPE_URL);
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      const scopedClients = clients.filter((client) => {
-        try {
-          const clientUrl = new URL(client.url);
-          return clientUrl.origin === targetUrl.origin && clientUrl.pathname.startsWith(SCOPE_URL.pathname);
-        } catch {
-          return false;
-        }
-      });
-
-      const preferredClient = scopedClients.find((client) => client.url === targetUrl.href) ?? scopedClients[0];
-
-      if (preferredClient && "focus" in preferredClient) {
-        preferredClient.navigate(targetUrl.href);
-        return preferredClient.focus();
-      }
-
-      for (const client of clients) {
-        if ("focus" in client && client.url === targetUrl.href) {
-          client.navigate(targetUrl.href);
-          return client.focus();
-        }
-      }
-
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl.href);
-      }
-
-      return undefined;
-    }),
-  );
 });
