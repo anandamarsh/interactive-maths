@@ -180,8 +180,10 @@ function sendEvent(event: AnalyticsEvent, useBeacon = false) {
   try {
     if (useBeacon && typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
       const blob = new Blob([body], { type: "application/json" });
-      navigator.sendBeacon(analyticsEndpoint, blob);
-      return;
+      const accepted = navigator.sendBeacon(analyticsEndpoint, blob);
+      if (accepted) {
+        return;
+      }
     }
 
     void fetch(analyticsEndpoint, {
@@ -258,6 +260,7 @@ export function endAnalyticsSession(session: AnalyticsSession, endReason: string
   }
 
   session.ended = true;
+  const shouldUseBeacon = endReason === "pagehide";
 
   sendEvent({
     eventType: "session_ended",
@@ -265,7 +268,7 @@ export function endAnalyticsSession(session: AnalyticsSession, endReason: string
     endedAt: new Date().toISOString(),
     endReason,
     ...baseEvent(session),
-  }, true);
+  }, shouldUseBeacon);
 
   if (session.gameId === siteAnalyticsGameId && endReason !== "pagehide") {
     clearStoredSiteSession(session.sessionId);
