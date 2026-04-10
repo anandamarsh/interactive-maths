@@ -6,6 +6,7 @@ const defaultAnalyticsEndpoint = import.meta.env.PROD
 
 const analyticsEndpoint = (import.meta.env.VITE_ANALYTICS_INGEST_URL ?? defaultAnalyticsEndpoint).trim();
 const playerIdStorageKey = "see-maths:analytics:player-id";
+const siteSessionStorageKey = "see-maths:analytics:site-session";
 const heartbeatIntervalMs = 30000;
 
 export type AnalyticsSession = {
@@ -100,6 +101,57 @@ function currentShellUrl() {
   return window.location.href;
 }
 
+function readStoredSiteSession() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(siteSessionStorageKey);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as { sessionId?: string; startedAt?: string } | null;
+    if (!parsed?.sessionId || !parsed?.startedAt) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSiteSession(session: Pick<AnalyticsSession, "sessionId" | "startedAt">) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(siteSessionStorageKey, JSON.stringify(session));
+  } catch {
+    // Ignore storage failures for analytics.
+  }
+}
+
+function clearStoredSiteSession(sessionId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const current = readStoredSiteSession();
+    if (!current || current.sessionId !== sessionId) {
+      return;
+    }
+
+    window.sessionStorage.removeItem(siteSessionStorageKey);
+  } catch {
+    // Ignore storage failures for analytics.
+  }
+}
+
 function baseEvent(session: AnalyticsSession): Omit<AnalyticsEvent, "eventType" | "sentAt"> {
   return {
     sessionId: session.sessionId,
@@ -163,14 +215,18 @@ export function createAnalyticsSession(game: Game, gameUrl: string, launchMode: 
 
 export function createSiteAnalyticsSession(): AnalyticsSession {
   const shellUrl = currentShellUrl();
+  const stored = readStoredSiteSession();
+  const sessionId = stored?.sessionId ?? randomId();
+  const startedAt = stored?.startedAt ?? new Date().toISOString();
+  writeStoredSiteSession({ sessionId, startedAt });
   return {
-    sessionId: randomId(),
+    sessionId,
     playerId: getPlayerId(),
     gameId: siteAnalyticsGameId,
     gameName: siteAnalyticsGameName,
     gameUrl: shellUrl,
     shellUrl,
-    startedAt: new Date().toISOString(),
+    startedAt,
     launchMode: "embedded",
     ended: false,
   };
@@ -210,6 +266,10 @@ export function endAnalyticsSession(session: AnalyticsSession, endReason: string
     endReason,
     ...baseEvent(session),
   }, true);
+
+  if (session.gameId === siteAnalyticsGameId && endReason !== "pagehide") {
+    clearStoredSiteSession(session.sessionId);
+  }
 }
 
 export function sendEmbeddedGameAnalyticsEvent(
