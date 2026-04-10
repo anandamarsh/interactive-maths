@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { SocialComments, SocialShare } from "./components/Social";
 import { GameIcon } from "./components/GameIcon";
 import type { Game, GameListEntry, GameSlot, TeachingLevel } from "./games";
@@ -9,6 +9,14 @@ import {
 } from "./games";
 import { ensurePushSubscription, sendTestPush } from "./pushNotifications";
 import { installEmbeddedStorageBridge } from "./utils/embeddedStorageBridge";
+import {
+  analyticsHeartbeatIntervalMs,
+  createAnalyticsSession,
+  endAnalyticsSession,
+  heartbeatAnalyticsSession,
+  startAnalyticsSession,
+  type AnalyticsSession,
+} from "./analytics";
 
 const SHELL_GITHUB_URL = "https://github.com/anandamarsh/see-maths";
 const SHELL_YOUTUBE_URL = "https://www.youtube.com/@SeeMaths0";
@@ -977,6 +985,7 @@ export default function App() {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 1024 && window.innerWidth <= window.innerHeight;
   });
+  const activeAnalyticsSessionRef = useRef<AnalyticsSession | null>(null);
 
   useEffect(() => {
     const listFile = import.meta.env.DEV ? "/games-local.json" : "/games.json";
@@ -1221,6 +1230,47 @@ export default function App() {
   }, []);
 
   useEffect(() => installEmbeddedStorageBridge(), []);
+
+  useEffect(() => {
+    if (!active) {
+      return;
+    }
+
+    const analyticsSession = createAnalyticsSession(active.game, active.url);
+    activeAnalyticsSessionRef.current = analyticsSession;
+    startAnalyticsSession(analyticsSession);
+    heartbeatAnalyticsSession(analyticsSession);
+
+    const heartbeatId = window.setInterval(() => {
+      heartbeatAnalyticsSession(analyticsSession);
+    }, analyticsHeartbeatIntervalMs());
+
+    const handlePageHide = () => {
+      endAnalyticsSession(analyticsSession, "pagehide");
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        heartbeatAnalyticsSession(analyticsSession);
+      }
+    };
+
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("beforeunload", handlePageHide);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(heartbeatId);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("beforeunload", handlePageHide);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      endAnalyticsSession(analyticsSession, "shell-exit");
+
+      if (activeAnalyticsSessionRef.current?.sessionId === analyticsSession.sessionId) {
+        activeAnalyticsSessionRef.current = null;
+      }
+    };
+  }, [active]);
 
   if (active) {
     return (
