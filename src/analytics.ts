@@ -270,7 +270,7 @@ export function endAnalyticsSession(session: AnalyticsSession, endReason: string
     ...baseEvent(session),
   }, shouldUseBeacon);
 
-  if (session.gameId === siteAnalyticsGameId && endReason !== "pagehide") {
+  if (session.gameId === siteAnalyticsGameId && endReason !== "pagehide" && endReason !== "game-opened") {
     clearStoredSiteSession(session.sessionId);
   }
 }

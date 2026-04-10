@@ -1232,7 +1232,7 @@ export default function App() {
       window.removeEventListener("pagehide", handlePageHide);
       window.removeEventListener("beforeunload", handlePageHide);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      endAnalyticsSession(analyticsSession, active ? "game-opened" : "shell-exit");
+      endAnalyticsSession(analyticsSession, "game-opened");
 
       if (siteAnalyticsSessionRef.current?.sessionId === analyticsSession.sessionId) {
         siteAnalyticsSessionRef.current = null;
