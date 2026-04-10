@@ -51,6 +51,20 @@ export type EmbeddedGameAnalyticsMessage = {
   payload?: Record<string, unknown>;
 };
 
+function sessionLevelPayload(session: AnalyticsSession) {
+  try {
+    const url = new URL(session.gameUrl);
+    const level = url.searchParams.get("level");
+    if (!level) {
+      return null;
+    }
+
+    return { level };
+  } catch {
+    return null;
+  }
+}
+
 function randomId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -214,6 +228,10 @@ export function sendEmbeddedGameAnalyticsEvent(
     payload,
     ...baseEvent(session),
   });
+}
+
+export function sessionLevelContext(session: AnalyticsSession) {
+  return sessionLevelPayload(session);
 }
 
 export function analyticsHeartbeatIntervalMs() {

@@ -15,6 +15,7 @@ import {
   createAnalyticsSession,
   endAnalyticsSession,
   heartbeatAnalyticsSession,
+  sessionLevelContext,
   sendEmbeddedGameAnalyticsEvent,
   startAnalyticsSession,
   type AnalyticsSession,
@@ -1248,6 +1249,10 @@ export default function App() {
     activeAnalyticsSessionRef.current = analyticsSession;
     startAnalyticsSession(analyticsSession);
     heartbeatAnalyticsSession(analyticsSession);
+    const levelContext = sessionLevelContext(analyticsSession);
+    if (levelContext) {
+      sendEmbeddedGameAnalyticsEvent(analyticsSession, "level_started", levelContext);
+    }
 
     const heartbeatId = window.setInterval(() => {
       heartbeatAnalyticsSession(analyticsSession);
@@ -1272,6 +1277,12 @@ export default function App() {
       window.removeEventListener("pagehide", handlePageHide);
       window.removeEventListener("beforeunload", handlePageHide);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (levelContext) {
+        sendEmbeddedGameAnalyticsEvent(analyticsSession, "level_finished", {
+          ...levelContext,
+          endReason: "shell-exit",
+        });
+      }
       endAnalyticsSession(analyticsSession, "shell-exit");
 
       if (activeAnalyticsSessionRef.current?.sessionId === analyticsSession.sessionId) {
