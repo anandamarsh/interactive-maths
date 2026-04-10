@@ -7,7 +7,10 @@ import {
   createGameSlot,
   loadGamesListProgressively,
 } from "./games";
-import { disablePushSubscription } from "./pushNotifications";
+import {
+  disablePushSubscription,
+  ensurePushSubscription,
+} from "./pushNotifications";
 import { installEmbeddedStorageBridge } from "./utils/embeddedStorageBridge";
 import {
   analyticsHeartbeatIntervalMs,
@@ -26,6 +29,8 @@ const SHELL_GITHUB_URL = "https://github.com/anandamarsh/see-maths";
 const SHELL_YOUTUBE_URL = "https://www.youtube.com/@SeeMaths0";
 const SHELL_YOUTUBE_ICON_URL = "/youtube-circle-logo-svgrepo-com.svg";
 const SHELL_PUBLIC_URL = "https://seemaths.com/";
+const SEE_MATHS_COMMENT_NOTIFICATIONS_KEY = "see-maths:comment-notifications";
+const LEGACY_COMMENT_NOTIFICATIONS_KEY = "interactive-maths:comment-notifications";
 const OVERLAY_EVENT_TYPES = new Set([
   "see-maths:overlay-active",
   "interactive-maths:overlay-active",
@@ -959,6 +964,18 @@ export default function App() {
   const [commentComposeRequest, setCommentComposeRequest] = useState(0);
   const [commentReloadRequest, setCommentReloadRequest] = useState(0);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [commentNotificationsEnabled, setCommentNotificationsEnabled] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    return (
+      window.localStorage.getItem(SEE_MATHS_COMMENT_NOTIFICATIONS_KEY) === "on" ||
+      window.localStorage.getItem(LEGACY_COMMENT_NOTIFICATIONS_KEY) === "on"
+    );
+  });
+  const [commentNotificationsBusy, setCommentNotificationsBusy] = useState(false);
+  const [commentNotificationsError, setCommentNotificationsError] = useState("");
   const [youtubeBubbleDismissed, setYoutubeBubbleDismissed] = useState(
     readYouTubeBubbleDismissed,
   );
@@ -1054,10 +1071,40 @@ export default function App() {
       return;
     }
 
-    window.localStorage.removeItem("see-maths:comment-notifications");
-    window.localStorage.removeItem("interactive-maths:comment-notifications");
-    void disablePushSubscription();
-  }, []);
+    window.localStorage.setItem(
+      SEE_MATHS_COMMENT_NOTIFICATIONS_KEY,
+      commentNotificationsEnabled ? "on" : "off",
+    );
+    window.localStorage.setItem(
+      LEGACY_COMMENT_NOTIFICATIONS_KEY,
+      commentNotificationsEnabled ? "on" : "off",
+    );
+  }, [commentNotificationsEnabled]);
+
+  async function toggleCommentNotifications() {
+    if (commentNotificationsBusy) {
+      return;
+    }
+
+    setCommentNotificationsBusy(true);
+    setCommentNotificationsError("");
+
+    try {
+      if (commentNotificationsEnabled) {
+        await disablePushSubscription();
+        setCommentNotificationsEnabled(false);
+      } else {
+        await ensurePushSubscription();
+        setCommentNotificationsEnabled(true);
+      }
+    } catch (error) {
+      setCommentNotificationsError(
+        error instanceof Error ? error.message : "Unable to update comment notifications.",
+      );
+    } finally {
+      setCommentNotificationsBusy(false);
+    }
+  }
 
   const openDrawer = (g: Game) => {
     closeSocialDrawers();
@@ -2035,9 +2082,61 @@ export default function App() {
             </div>
 
             <p className="settings-note">
-              Notifications are handled in DiscussIt Moderator only. Any old
-              See Maths push subscription is cleared automatically.
+              Comment notifications can be enabled in See Maths. Analytics notifications
+              are sent to DiscussIt Moderator only.
             </p>
+
+            <div className="settings-switch-row">
+              <div>
+                <strong
+                  style={{
+                    display: "block",
+                    color: "#f8fafc",
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  Comment notifications
+                </strong>
+                <small style={{ color: "rgba(226,232,240,0.72)" }}>
+                  Get notified here when someone leaves a new comment on See Maths.
+                </small>
+                {commentNotificationsError ? (
+                  <small
+                    style={{
+                      display: "block",
+                      marginTop: "0.45rem",
+                      color: "#fca5a5",
+                    }}
+                  >
+                    {commentNotificationsError}
+                  </small>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                className="settings-switch"
+                role="switch"
+                aria-checked={commentNotificationsEnabled}
+                aria-label="Toggle See Maths comment notifications"
+                onClick={() => void toggleCommentNotifications()}
+                disabled={commentNotificationsBusy}
+              >
+                <span
+                  className="settings-switch-track"
+                  style={{
+                    background: commentNotificationsEnabled ? "#ca8a04" : "#334155",
+                    opacity: commentNotificationsBusy ? 0.75 : 1,
+                  }}
+                >
+                  <span
+                    className="settings-switch-thumb"
+                    style={{
+                      transform: commentNotificationsEnabled ? "translateX(1.4rem)" : "translateX(0)",
+                    }}
+                  />
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       )}

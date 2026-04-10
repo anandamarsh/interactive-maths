@@ -61,11 +61,6 @@ self.addEventListener("activate", (event) => {
           .map((key) => caches.delete(key)),
       ),
     ).then(async () => {
-      const subscription = await self.registration.pushManager.getSubscription().catch(() => null);
-      if (subscription) {
-        await subscription.unsubscribe().catch(() => {});
-      }
-
       const notifications = await self.registration.getNotifications().catch(() => []);
       await Promise.all(notifications.map((notification) => notification.close()));
       await self.clients.claim();
@@ -124,4 +119,56 @@ self.addEventListener("fetch", (event) => {
       }),
     );
   }
+});
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+
+  if (event.data) {
+    try {
+      payload = event.data.json();
+    } catch {
+      payload = { body: event.data.text() };
+    }
+  }
+
+  const data = typeof payload === "object" && payload !== null ? payload : {};
+  const title = typeof data.title === "string" && data.title.trim().length > 0 ? data.title : "See Maths";
+  const body =
+    typeof data.body === "string" && data.body.trim().length > 0
+      ? data.body
+      : "You have a new See Maths notification.";
+  const url = typeof data.url === "string" && data.url.trim().length > 0 ? data.url : SCOPE_URL.href;
+  const tag = typeof data.tag === "string" && data.tag.trim().length > 0 ? data.tag : "see-maths-notification";
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      icon: new URL("./icon-512.png", SCOPE_URL).pathname,
+      badge: new URL("./favicon.svg", SCOPE_URL).pathname,
+      tag,
+      data: { url },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = resolveAppUrl(event.notification.data?.url);
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client && client.url === targetUrl) {
+          return client.focus();
+        }
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+
+      return undefined;
+    }),
+  );
 });
