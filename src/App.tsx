@@ -11,6 +11,7 @@ import { disablePushSubscription } from "./pushNotifications";
 import { installEmbeddedStorageBridge } from "./utils/embeddedStorageBridge";
 import {
   analyticsHeartbeatIntervalMs,
+  createSiteAnalyticsSession,
   createAnalyticsSession,
   endAnalyticsSession,
   heartbeatAnalyticsSession,
@@ -969,6 +970,7 @@ export default function App() {
     return window.innerWidth < 1024 && window.innerWidth <= window.innerHeight;
   });
   const activeAnalyticsSessionRef = useRef<AnalyticsSession | null>(null);
+  const siteAnalyticsSessionRef = useRef<AnalyticsSession | null>(null);
 
   useEffect(() => {
     const listFile = import.meta.env.DEV ? "/games-local.json" : "/games.json";
@@ -1195,6 +1197,47 @@ export default function App() {
   }, [active]);
 
   useEffect(() => installEmbeddedStorageBridge(), []);
+
+  useEffect(() => {
+    if (active) {
+      return;
+    }
+
+    const analyticsSession = createSiteAnalyticsSession();
+    siteAnalyticsSessionRef.current = analyticsSession;
+    startAnalyticsSession(analyticsSession);
+    heartbeatAnalyticsSession(analyticsSession);
+
+    const heartbeatId = window.setInterval(() => {
+      heartbeatAnalyticsSession(analyticsSession);
+    }, analyticsHeartbeatIntervalMs());
+
+    const handlePageHide = () => {
+      endAnalyticsSession(analyticsSession, "pagehide");
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        heartbeatAnalyticsSession(analyticsSession);
+      }
+    };
+
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("beforeunload", handlePageHide);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(heartbeatId);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("beforeunload", handlePageHide);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      endAnalyticsSession(analyticsSession, active ? "game-opened" : "shell-exit");
+
+      if (siteAnalyticsSessionRef.current?.sessionId === analyticsSession.sessionId) {
+        siteAnalyticsSessionRef.current = null;
+      }
+    };
+  }, [active]);
 
   useEffect(() => {
     if (!active) {

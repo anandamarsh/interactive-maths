@@ -20,6 +20,9 @@ export type AnalyticsSession = {
   ended: boolean;
 };
 
+const siteAnalyticsGameId = "__site__";
+const siteAnalyticsGameName = "See Maths";
+
 type AnalyticsEvent = {
   eventType: "session_started" | "heartbeat" | "session_ended" | "game_event";
   sessionId: string;
@@ -140,6 +143,21 @@ export function createAnalyticsSession(game: Game, gameUrl: string, launchMode: 
     shellUrl: currentShellUrl(),
     startedAt: new Date().toISOString(),
     launchMode,
+    ended: false,
+  };
+}
+
+export function createSiteAnalyticsSession(): AnalyticsSession {
+  const shellUrl = currentShellUrl();
+  return {
+    sessionId: randomId(),
+    playerId: getPlayerId(),
+    gameId: siteAnalyticsGameId,
+    gameName: siteAnalyticsGameName,
+    gameUrl: shellUrl,
+    shellUrl,
+    startedAt: new Date().toISOString(),
+    launchMode: "embedded",
     ended: false,
   };
 }
