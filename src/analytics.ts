@@ -21,7 +21,7 @@ export type AnalyticsSession = {
 };
 
 type AnalyticsEvent = {
-  eventType: "session_started" | "heartbeat" | "session_ended";
+  eventType: "session_started" | "heartbeat" | "session_ended" | "game_event";
   sessionId: string;
   playerId: string;
   gameId: string;
@@ -38,6 +38,14 @@ type AnalyticsEvent = {
   screenHeight?: number;
   endedAt?: string;
   endReason?: string;
+  eventName?: string;
+  payload?: Record<string, unknown>;
+};
+
+export type EmbeddedGameAnalyticsMessage = {
+  type: "see-maths:analytics-event" | "interactive-maths:analytics-event";
+  eventName?: string;
+  payload?: Record<string, unknown>;
 };
 
 function randomId() {
@@ -170,6 +178,24 @@ export function endAnalyticsSession(session: AnalyticsSession, endReason: string
     endReason,
     ...baseEvent(session),
   }, true);
+}
+
+export function sendEmbeddedGameAnalyticsEvent(
+  session: AnalyticsSession,
+  eventName: string,
+  payload: Record<string, unknown> = {},
+) {
+  if (session.ended || !eventName.trim()) {
+    return;
+  }
+
+  sendEvent({
+    eventType: "game_event",
+    sentAt: new Date().toISOString(),
+    eventName: eventName.trim(),
+    payload,
+    ...baseEvent(session),
+  });
 }
 
 export function analyticsHeartbeatIntervalMs() {

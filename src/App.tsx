@@ -14,8 +14,10 @@ import {
   createAnalyticsSession,
   endAnalyticsSession,
   heartbeatAnalyticsSession,
+  sendEmbeddedGameAnalyticsEvent,
   startAnalyticsSession,
   type AnalyticsSession,
+  type EmbeddedGameAnalyticsMessage,
 } from "./analytics";
 
 const SHELL_GITHUB_URL = "https://github.com/anandamarsh/see-maths";
@@ -1228,6 +1230,40 @@ export default function App() {
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, []);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent<EmbeddedGameAnalyticsMessage>) => {
+      const data = event.data;
+      if (!data || (data.type !== "see-maths:analytics-event" && data.type !== "interactive-maths:analytics-event")) {
+        return;
+      }
+
+      const session = activeAnalyticsSessionRef.current;
+      if (!session || session.ended || !active) {
+        return;
+      }
+
+      const source = event.source;
+      const frame = document.querySelector("iframe");
+      if (frame?.contentWindow && source !== frame.contentWindow) {
+        return;
+      }
+
+      const eventName = typeof data.eventName === "string" ? data.eventName.trim() : "";
+      if (!eventName) {
+        return;
+      }
+
+      sendEmbeddedGameAnalyticsEvent(
+        session,
+        eventName,
+        data.payload && typeof data.payload === "object" ? data.payload : {},
+      );
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [active]);
 
   useEffect(() => installEmbeddedStorageBridge(), []);
 
