@@ -10,6 +10,7 @@ import {
 import {
   disablePushSubscription,
   ensurePushSubscription,
+  sendTestPush,
 } from "./pushNotifications";
 import { installEmbeddedStorageBridge } from "./utils/embeddedStorageBridge";
 import {
@@ -975,6 +976,7 @@ export default function App() {
     );
   });
   const [commentNotificationsBusy, setCommentNotificationsBusy] = useState(false);
+  const [commentNotificationsTesting, setCommentNotificationsTesting] = useState(false);
   const [commentNotificationsError, setCommentNotificationsError] = useState("");
   const [youtubeBubbleDismissed, setYoutubeBubbleDismissed] = useState(
     readYouTubeBubbleDismissed,
@@ -1103,6 +1105,26 @@ export default function App() {
       );
     } finally {
       setCommentNotificationsBusy(false);
+    }
+  }
+
+  async function sendCommentNotificationTest() {
+    if (commentNotificationsBusy || commentNotificationsTesting) {
+      return;
+    }
+
+    setCommentNotificationsTesting(true);
+    setCommentNotificationsError("");
+
+    try {
+      await sendTestPush();
+      setCommentNotificationsEnabled(true);
+    } catch (error) {
+      setCommentNotificationsError(
+        error instanceof Error ? error.message : "Unable to send test notification.",
+      );
+    } finally {
+      setCommentNotificationsTesting(false);
     }
   }
 
@@ -2091,30 +2113,40 @@ export default function App() {
               >
                 Notifications
               </strong>
-              <button
-                type="button"
-                className="settings-switch"
-                role="switch"
-                aria-checked={commentNotificationsEnabled}
-                aria-label="Toggle See Maths comment notifications"
-                onClick={() => void toggleCommentNotifications()}
-                disabled={commentNotificationsBusy}
-              >
-                <span
-                  className="settings-switch-track"
-                  style={{
-                    background: commentNotificationsEnabled ? "#ca8a04" : "#334155",
-                    opacity: commentNotificationsBusy ? 0.75 : 1,
-                  }}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
+                <button
+                  type="button"
+                  className="settings-push-button"
+                  onClick={() => void sendCommentNotificationTest()}
+                  disabled={commentNotificationsBusy || commentNotificationsTesting}
+                >
+                  {commentNotificationsTesting ? "SENDING…" : "TEST"}
+                </button>
+                <button
+                  type="button"
+                  className="settings-switch"
+                  role="switch"
+                  aria-checked={commentNotificationsEnabled}
+                  aria-label="Toggle See Maths comment notifications"
+                  onClick={() => void toggleCommentNotifications()}
+                  disabled={commentNotificationsBusy || commentNotificationsTesting}
                 >
                   <span
-                    className="settings-switch-thumb"
+                    className="settings-switch-track"
                     style={{
-                      transform: commentNotificationsEnabled ? "translateX(1.4rem)" : "translateX(0)",
+                      background: commentNotificationsEnabled ? "#ca8a04" : "#334155",
+                      opacity: commentNotificationsBusy || commentNotificationsTesting ? 0.75 : 1,
                     }}
-                  />
-                </span>
-              </button>
+                  >
+                    <span
+                      className="settings-switch-thumb"
+                      style={{
+                        transform: commentNotificationsEnabled ? "translateX(1.4rem)" : "translateX(0)",
+                      }}
+                    />
+                  </span>
+                </button>
+              </div>
             </div>
             {commentNotificationsError ? (
               <small
