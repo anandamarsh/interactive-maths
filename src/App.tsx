@@ -2081,37 +2081,16 @@ export default function App() {
               </button>
             </div>
 
-            <p className="settings-note">
-              Comment notifications can be enabled in See Maths. Analytics notifications
-              are sent to DiscussIt Moderator only.
-            </p>
-
             <div className="settings-switch-row">
-              <div>
-                <strong
-                  style={{
-                    display: "block",
-                    color: "#f8fafc",
-                    fontSize: "0.95rem",
-                  }}
-                >
-                  Comment notifications
-                </strong>
-                <small style={{ color: "rgba(226,232,240,0.72)" }}>
-                  Get notified here when someone leaves a new comment on See Maths.
-                </small>
-                {commentNotificationsError ? (
-                  <small
-                    style={{
-                      display: "block",
-                      marginTop: "0.45rem",
-                      color: "#fca5a5",
-                    }}
-                  >
-                    {commentNotificationsError}
-                  </small>
-                ) : null}
-              </div>
+              <strong
+                style={{
+                  display: "block",
+                  color: "#f8fafc",
+                  fontSize: "0.95rem",
+                }}
+              >
+                Notifications
+              </strong>
               <button
                 type="button"
                 className="settings-switch"
@@ -2137,6 +2116,17 @@ export default function App() {
                 </span>
               </button>
             </div>
+            {commentNotificationsError ? (
+              <small
+                style={{
+                  display: "block",
+                  marginTop: "0.7rem",
+                  color: "#fca5a5",
+                }}
+              >
+                {commentNotificationsError}
+              </small>
+            ) : null}
           </div>
         </div>
       )}
