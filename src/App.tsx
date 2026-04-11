@@ -1544,7 +1544,7 @@ export default function App() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="text-sm font-black uppercase tracking-[0.22em] text-white">
-                    Demo Mode
+                    Demo
                   </div>
                   <p className="mt-1 text-sm leading-relaxed text-slate-100">
                     Quick testing. Please leave a comment.
@@ -1556,7 +1556,7 @@ export default function App() {
                     setDemoModeEnabled(false);
                     setDemoModeEnabledState(false);
                   }}
-                  className="self-start rounded-xl px-4 py-2 text-sm font-bold text-slate-950 transition-all"
+                  className="self-start sm:self-center rounded-xl px-4 py-2 text-sm font-bold text-slate-950 transition-all"
                   style={{ background: "#facc15" }}
                 >
                   Exit Demo
