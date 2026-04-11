@@ -1536,19 +1536,18 @@ export default function App() {
             <div
               className="mt-4 w-full max-w-3xl rounded-2xl px-4 py-3 text-left"
               style={{
-                background: "rgba(250, 204, 21, 0.12)",
-                border: "1px solid rgba(250, 204, 21, 0.45)",
-                boxShadow: "0 0 28px rgba(250, 204, 21, 0.12)",
+                background: "rgba(30, 64, 175, 0.3)",
+                border: "1px solid rgba(96, 165, 250, 0.45)",
+                boxShadow: "0 0 24px rgba(59, 130, 246, 0.16)",
               }}
             >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="text-sm font-black uppercase tracking-[0.22em] text-yellow-300">
+                  <div className="text-sm font-black uppercase tracking-[0.22em] text-white">
                     Demo Mode
                   </div>
                   <p className="mt-1 text-sm leading-relaxed text-slate-100">
-                    Quick tester flow is on. Games open with answers visible and shorter targets.
-                    Please leave a comment.
+                    Quick testing. Please leave a comment.
                   </p>
                 </div>
                 <button
