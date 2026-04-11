@@ -25,6 +25,11 @@ import {
   type AnalyticsSession,
   type EmbeddedGameAnalyticsMessage,
 } from "./analytics";
+import {
+  resolveDemoModeFromUrl,
+  setDemoModeEnabled,
+  withDemoParam,
+} from "./demoMode";
 
 const SHELL_GITHUB_URL = "https://github.com/anandamarsh/see-maths";
 const SHELL_YOUTUBE_URL = "https://www.youtube.com/@SeeMaths0";
@@ -965,6 +970,9 @@ export default function App() {
   const [commentComposeRequest, setCommentComposeRequest] = useState(0);
   const [commentReloadRequest, setCommentReloadRequest] = useState(0);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [demoModeEnabled, setDemoModeEnabledState] = useState(() =>
+    resolveDemoModeFromUrl(),
+  );
   const [commentNotificationsEnabled, setCommentNotificationsEnabled] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -1195,6 +1203,12 @@ export default function App() {
   }
 
   const filteredSlots = slots.filter((slot) => {
+    if (demoModeEnabled && slot.game) {
+      const isRipple = slot.game.url.includes("maths-game-template");
+      if (isRipple || slot.game.thirdParty) {
+        return false;
+      }
+    }
     const q = query.toLowerCase();
     if (!q) return true;
     if (!slot.game) return false;
@@ -1211,7 +1225,8 @@ export default function App() {
   function startPlay(g: Game, level?: number) {
     closeSocialDrawers();
     setEmbeddedOverlayActive(false);
-    const targetUrl = level ? withLevelParam(g.url, level) : g.url;
+    const levelUrl = level ? withLevelParam(g.url, level) : g.url;
+    const targetUrl = withDemoParam(levelUrl, demoModeEnabled);
     if (g.openInNewTab) {
       window.open(targetUrl, "_blank", "noopener,noreferrer");
       return;
@@ -1308,6 +1323,15 @@ export default function App() {
       }
     };
   }, [active]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setDemoModeEnabledState(resolveDemoModeFromUrl());
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   useEffect(() => {
     if (!active) {
@@ -1508,6 +1532,39 @@ export default function App() {
               e.currentTarget.style.boxShadow = "none";
             }}
           />
+          {demoModeEnabled ? (
+            <div
+              className="mt-4 w-full max-w-3xl rounded-2xl px-4 py-3 text-left"
+              style={{
+                background: "rgba(250, 204, 21, 0.12)",
+                border: "1px solid rgba(250, 204, 21, 0.45)",
+                boxShadow: "0 0 28px rgba(250, 204, 21, 0.12)",
+              }}
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-sm font-black uppercase tracking-[0.22em] text-yellow-300">
+                    Demo Mode
+                  </div>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-100">
+                    Quick tester flow is on. Games open with answers visible and shorter targets.
+                    Ask testers to leave a comment and email the report to themselves.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDemoModeEnabled(false);
+                    setDemoModeEnabledState(false);
+                  }}
+                  className="self-start rounded-xl px-4 py-2 text-sm font-bold text-slate-950 transition-all"
+                  style={{ background: "#facc15" }}
+                >
+                  Exit Demo
+                </button>
+              </div>
+            </div>
+          ) : null}
         </header>
 
         {filteredSlots.length === 0 && !loading ? (
