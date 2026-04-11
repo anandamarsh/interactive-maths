@@ -1536,7 +1536,7 @@ export default function App() {
             <div
               className="mt-4 w-full max-w-3xl rounded-2xl px-4 py-3 text-left"
               style={{
-                background: "rgba(30, 64, 175, 0.3)",
+                background: "#09104c",
                 border: "1px solid rgba(96, 165, 250, 0.45)",
                 boxShadow: "0 0 24px rgba(59, 130, 246, 0.16)",
               }}
