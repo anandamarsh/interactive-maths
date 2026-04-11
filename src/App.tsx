@@ -1548,7 +1548,7 @@ export default function App() {
                   </div>
                   <p className="mt-1 text-sm leading-relaxed text-slate-100">
                     Quick tester flow is on. Games open with answers visible and shorter targets.
-                    Ask testers to leave a comment and email the report to themselves.
+                    Please leave a comment.
                   </p>
                 </div>
                 <button
