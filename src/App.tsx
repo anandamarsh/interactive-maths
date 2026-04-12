@@ -1221,6 +1221,7 @@ export default function App() {
       g.description.toLowerCase().includes(q)
     );
   });
+  const commentPageUrl = active ? active.game.url : SHELL_PUBLIC_URL;
 
   function startPlay(g: Game, level?: number) {
     closeSocialDrawers();
@@ -2288,6 +2289,7 @@ export default function App() {
         <div className="shell-social-comments-shell">
           {showCommentsDrawer ? (
             <SocialComments
+              pageUrl={commentPageUrl}
               composeRequest={commentComposeRequest}
               reloadRequest={commentReloadRequest}
             />

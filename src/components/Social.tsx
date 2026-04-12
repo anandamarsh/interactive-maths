@@ -50,19 +50,41 @@ export function SocialShare() {
   );
 }
 
-/** Map current domain to canonical URL so comments stay consistent across domain changes */
-function getCanonicalPageUrl(): string {
-  if (typeof window === "undefined") return SHARE_URL;
-  const url = new URL(window.location.href);
-  url.hostname = "seemaths.com";
-  url.port = "";
-  url.protocol = "https:";
-  return url.toString();
+/** Normalize thread URLs so shell comments stay stable across host changes and game comments stay host-root scoped. */
+function getCanonicalPageUrl(pageUrl: string): string {
+  try {
+    const url = new URL(pageUrl);
+    url.hash = "";
+
+    if (
+      url.hostname === "seemaths.com" ||
+      url.hostname === "www.seemaths.com" ||
+      url.hostname === "interactive-maths.vercel.app"
+    ) {
+      url.hostname = "seemaths.com";
+      url.port = "";
+      url.protocol = "https:";
+      return url.toString();
+    }
+
+    url.search = "";
+    return url.toString();
+  } catch {
+    return SHARE_URL;
+  }
 }
 
-export function SocialComments({ composeRequest, reloadRequest }: { composeRequest: number; reloadRequest: number }) {
-  const pageUrl = getCanonicalPageUrl();
-  const iframeUrl = `${LOCAL_DISCUSSIT_URL}/?url=${encodeURIComponent(pageUrl)}&theme=dark`;
+export function SocialComments({
+  pageUrl,
+  composeRequest,
+  reloadRequest,
+}: {
+  pageUrl: string;
+  composeRequest: number;
+  reloadRequest: number;
+}) {
+  const canonicalPageUrl = getCanonicalPageUrl(pageUrl);
+  const iframeUrl = `${LOCAL_DISCUSSIT_URL}/?url=${encodeURIComponent(canonicalPageUrl)}&theme=dark`;
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
