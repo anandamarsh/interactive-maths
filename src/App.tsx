@@ -131,7 +131,7 @@ function hostName(url: string): string | null {
 
 function getLaunchLevels(game: Game): number[] {
   const host = hostName(game.url) ?? "";
-  if (host.includes("maths-angle-explorer")) return [1, 2];
+  if (host.includes("maths-angle-explorer")) return [1, 2, 3];
   if (host.includes("maths-distance-calculator")) return [1, 2, 3];
   return [];
 }
