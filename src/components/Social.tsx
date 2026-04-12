@@ -15,7 +15,9 @@ const SHARE_URL = "https://seemaths.com/";
 const DEFAULT_DISCUSSIT_URL = import.meta.env.PROD
   ? "https://discussit-widget.vercel.app"
   : "http://localhost:5001";
-const LOCAL_DISCUSSIT_URL = (import.meta.env.VITE_DISCUSSIT_URL ?? DEFAULT_DISCUSSIT_URL).replace(/\/$/, "");
+const LOCAL_DISCUSSIT_URL = (import.meta.env.VITE_DISCUSSIT_URL ?? DEFAULT_DISCUSSIT_URL)
+  .trim()
+  .replace(/\/$/, "");
 
 export function SocialShare() {
   return (
