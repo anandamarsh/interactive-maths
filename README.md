@@ -22,7 +22,6 @@ In short: this repo is the platform shell. The actual maths experiences live in 
 - [Ripple Touch](https://github.com/anandamarsh/maths-game-template)
 - [Trail Distances](https://github.com/anandamarsh/maths-distance-calculator)
 - [Angle Explorer](https://github.com/anandamarsh/maths-angle-explorer)
-- Loci Complex currently does not expose a public GitHub repository link in this shell's app metadata.
 
 ## How It Works
 

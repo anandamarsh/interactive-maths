@@ -10,25 +10,5 @@
   {
     "playUrl": "https://maths-angle-explorer.vercel.app/",
     "year": "Year 3-7"
-  },
-  {
-    "playUrl": "https://locicomplex.com/",
-    "year": "9-10",
-    "manifest": {
-      "id": "locicomplex",
-      "name": "Loci Complex",
-      "tags": ["loci", "geometry", "construction", "partner"],
-      "subjects": ["maths"],
-      "skills": ["loci", "geometric constructions", "compass and ruler ideas"],
-      "teachesLevels": [
-        {
-          "label": "Locus and the parabola — geometric constructions and constraint-based paths",
-          "stageLabel": "Stage 5 (Years 9-10)",
-          "syllabusCode": "MA5.3-15MG",
-          "syllabusDescription": "Applies understanding of locus and the parabola in algebraic and geometric contexts."
-        }
-      ],
-      "description": "WHAT IT DOES:\nAn interactive space for exploring loci — the paths traced by points that move under geometric rules (fixed distance from a point, from a line, and more).\n\nPARTNER SITE:\nThis experience is built and hosted at locicomplex.com. You can play it inside the library or open it in a new browser tab if the embed stays blank (some sites block framing).\n\nWHAT IT TEACHES:\n– Intuition for circle, line, and combined loci\n– How constraints on a moving point shape its path\n– Visual links between compass constructions and locus problems\n\nTIP:\nIf you only see an empty frame, tap \"New tab\" — the game will run in a full window."
-    }
   }
 ]
