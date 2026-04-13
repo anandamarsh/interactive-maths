@@ -247,12 +247,12 @@ body {
   filter: brightness(0.97);
 }
 
-@media (max-width: 640px) and (orientation: portrait) {
+@media (max-width: 640px) {
   .app-demo-launch {
-    position: static;
+    top: 0.75rem;
+    left: 0.75rem;
     padding: 0.45rem 1rem;
     font-size: 0.78rem;
-    align-self: center;
   }
 }
 
