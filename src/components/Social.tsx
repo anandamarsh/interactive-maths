@@ -11,7 +11,7 @@ import {
 } from "react-share";
 
 const SHARE_TITLE = "Check out this maths game on See Maths!";
-const SHARE_URL = "https://seemaths.com/";
+const DEFAULT_SHARE_URL = "https://seemaths.com/";
 const DEFAULT_DISCUSSIT_URL = import.meta.env.PROD
   ? "https://discussit-widget.vercel.app"
   : "http://localhost:5001";
@@ -19,28 +19,28 @@ const LOCAL_DISCUSSIT_URL = (import.meta.env.VITE_DISCUSSIT_URL ?? DEFAULT_DISCU
   .trim()
   .replace(/\/$/, "");
 
-export function SocialShare() {
+export function SocialShare({ shareUrl = DEFAULT_SHARE_URL }: { shareUrl?: string }) {
   return (
     <div className="social-share-buttons">
-      <TwitterShareButton url={SHARE_URL} title={SHARE_TITLE}>
+      <TwitterShareButton url={shareUrl} title={SHARE_TITLE}>
         <span className="social-share-chip">
           <TwitterIcon size={42} round />
           <span>X</span>
         </span>
       </TwitterShareButton>
-      <FacebookShareButton url={SHARE_URL}>
+      <FacebookShareButton url={shareUrl}>
         <span className="social-share-chip">
           <FacebookIcon size={42} round />
           <span>Facebook</span>
         </span>
       </FacebookShareButton>
-      <WhatsappShareButton url={SHARE_URL} title={SHARE_TITLE} separator=" - ">
+      <WhatsappShareButton url={shareUrl} title={SHARE_TITLE} separator=" - ">
         <span className="social-share-chip">
           <WhatsappIcon size={42} round />
           <span>WhatsApp</span>
         </span>
       </WhatsappShareButton>
-      <LinkedinShareButton url={SHARE_URL} title={SHARE_TITLE} summary={SHARE_TITLE}>
+      <LinkedinShareButton url={shareUrl} title={SHARE_TITLE} summary={SHARE_TITLE}>
         <span className="social-share-chip">
           <LinkedinIcon size={42} round />
           <span>LinkedIn</span>
@@ -70,7 +70,7 @@ function getCanonicalPageUrl(pageUrl: string): string {
     url.search = "";
     return url.toString();
   } catch {
-    return SHARE_URL;
+    return DEFAULT_SHARE_URL;
   }
 }
 
