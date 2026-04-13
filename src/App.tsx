@@ -1427,25 +1427,6 @@ export default function App() {
       className="min-h-[100lvh] px-6 py-10"
       style={{ backgroundColor: "transparent" }}
     >
-      {!demoModeEnabled ? (
-        <button
-          type="button"
-          onClick={() => {
-            setDemoModeEnabled(true);
-            setDemoModeEnabledState(true);
-          }}
-          className="app-demo-launch"
-          title="Enter demo mode"
-          aria-label="Enter demo mode"
-          style={{
-            opacity: showSettingsModal ? 0 : 1,
-            pointerEvents: showSettingsModal ? "none" : "auto",
-          }}
-          aria-hidden={showSettingsModal}
-        >
-          Demo
-        </button>
-      ) : null}
       <div
         className="app-shell-actions"
         style={{
@@ -1526,6 +1507,20 @@ export default function App() {
             <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.028 7.028 0 0 0-1.63-.94l-.36-2.54A.488.488 0 0 0 13.9 2h-3.8c-.24 0-.44.17-.48.41l-.36 2.54c-.59.24-1.13.55-1.63.94l-2.39-.96a.493.493 0 0 0-.6.22L2.72 8.47a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.07.64-.07.95s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.22.39.31.6.22l2.39-.96c.5.39 1.05.71 1.63.94l.36 2.54c.04.24.24.41.48.41h3.8c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.55 1.63-.94l2.39.96c.22.09.48 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.01-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
           </svg>
         </button>
+        {!demoModeEnabled ? (
+          <button
+            type="button"
+            onClick={() => {
+              setDemoModeEnabled(true);
+              setDemoModeEnabledState(true);
+            }}
+            className="app-demo-launch"
+            title="Enter demo mode"
+            aria-label="Enter demo mode"
+          >
+            Demo Mode
+          </button>
+        ) : null}
       </div>
       <div className="max-w-5xl mx-auto w-full">
         <header className="mb-10 flex flex-col items-center overflow-visible pt-4 text-center">
@@ -1564,10 +1559,10 @@ export default function App() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="text-sm font-black uppercase tracking-[0.22em] text-white">
-                    Demo
+                    Demo Mode
                   </div>
                   <p className="mt-1 text-sm leading-relaxed text-slate-100">
-                    Quick testing. Please leave a comment.
+                    In Demo mode, you can pass a level with only two questions. Meant for a quick-preview by an Adult.
                   </p>
                 </div>
                 <button
@@ -1576,7 +1571,7 @@ export default function App() {
                     setDemoModeEnabled(false);
                     setDemoModeEnabledState(false);
                   }}
-                  className="self-start sm:self-center rounded-xl px-4 py-2 text-sm font-bold text-slate-950 transition-all"
+                  className="self-center rounded-xl px-4 py-2 text-sm font-bold text-slate-950 transition-all"
                   style={{ background: "#facc15" }}
                 >
                   Exit Demo
@@ -1865,7 +1860,7 @@ export default function App() {
                         type="button"
                         onClick={() => {
                           window.open(
-                            drawer.url,
+                            withDemoParam(drawer.url, demoModeEnabled),
                             "_blank",
                             "noopener,noreferrer",
                           );
@@ -2019,7 +2014,7 @@ export default function App() {
                         type="button"
                         onClick={() => {
                           window.open(
-                            drawer.url,
+                            withDemoParam(drawer.url, demoModeEnabled),
                             "_blank",
                             "noopener,noreferrer",
                           );

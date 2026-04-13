@@ -202,6 +202,14 @@ body {
   align-items: flex-end;
 }
 
+/*
+ * Demo Mode launch button.
+ *
+ * Rendered as the last child of .app-shell-actions so it can fall into the
+ * bottom-left cluster on mobile portrait. On every other viewport the
+ * button is lifted out of flex flow via fixed positioning and anchored to
+ * the top-left corner, so it never disturbs the existing shell layout.
+ */
 .app-demo-launch {
   position: fixed;
   top: 1rem;
@@ -239,12 +247,12 @@ body {
   filter: brightness(0.97);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 640px) and (orientation: portrait) {
   .app-demo-launch {
-    top: 0.75rem;
-    left: 0.75rem;
+    position: static;
     padding: 0.45rem 1rem;
     font-size: 0.78rem;
+    align-self: center;
   }
 }
 
