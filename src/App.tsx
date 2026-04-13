@@ -1514,7 +1514,8 @@ export default function App() {
               setDemoModeEnabled(true);
               setDemoModeEnabledState(true);
             }}
-            className="app-demo-launch"
+            className="app-demo-launch whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold text-slate-950 transition-all"
+            style={{ background: "#facc15" }}
             title="Enter demo mode"
             aria-label="Enter demo mode"
           >
@@ -1557,7 +1558,7 @@ export default function App() {
               }}
             >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
+                <div className="max-w-sm">
                   <div className="text-sm font-black uppercase tracking-[0.22em] text-white">
                     Demo Mode
                   </div>
@@ -1571,7 +1572,7 @@ export default function App() {
                     setDemoModeEnabled(false);
                     setDemoModeEnabledState(false);
                   }}
-                  className="self-center rounded-xl px-4 py-2 text-sm font-bold text-slate-950 transition-all"
+                  className="self-center whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold text-slate-950 transition-all"
                   style={{ background: "#facc15" }}
                 >
                   Exit Demo
