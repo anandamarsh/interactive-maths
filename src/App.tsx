@@ -1427,6 +1427,25 @@ export default function App() {
       className="min-h-[100lvh] px-6 py-10"
       style={{ backgroundColor: "transparent" }}
     >
+      {!demoModeEnabled ? (
+        <button
+          type="button"
+          onClick={() => {
+            setDemoModeEnabled(true);
+            setDemoModeEnabledState(true);
+          }}
+          className="app-demo-launch"
+          title="Enter demo mode"
+          aria-label="Enter demo mode"
+          style={{
+            opacity: showSettingsModal ? 0 : 1,
+            pointerEvents: showSettingsModal ? "none" : "auto",
+          }}
+          aria-hidden={showSettingsModal}
+        >
+          Demo
+        </button>
+      ) : null}
       <div
         className="app-shell-actions"
         style={{
