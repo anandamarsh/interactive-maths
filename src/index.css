@@ -207,16 +207,13 @@ body {
  *
  * Styling (rounded-xl, flat yellow, text-sm) is provided via Tailwind
  * classes so the button visually matches the in-panel Exit Demo button.
- * This class handles positioning only: anchored to the top-left on every
- * viewport, and horizontally centered on mobile portrait.
+ * This class handles positioning only: anchored top-left on desktop, and
+ * horizontally centered at the top on mobile (both orientations).
  */
 .app-demo-launch {
   position: fixed;
   top: 1rem;
-  left: 0;
-  right: 0;
-  margin-inline: auto;
-  width: fit-content;
+  left: 1rem;
   z-index: 40;
   cursor: pointer;
   box-shadow: 0 10px 22px rgba(2, 6, 23, 0.45);
@@ -228,6 +225,15 @@ body {
 
 .app-demo-launch:active {
   filter: brightness(0.97);
+}
+
+@media (max-width: 640px) {
+  .app-demo-launch {
+    left: 0;
+    right: 0;
+    margin-inline: auto;
+    width: fit-content;
+  }
 }
 
 @media (max-width: 640px) and (orientation: portrait) {
