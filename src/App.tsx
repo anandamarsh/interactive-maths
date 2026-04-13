@@ -1518,12 +1518,12 @@ export default function App() {
             title="Enter demo mode"
             aria-label="Enter demo mode"
           >
-            Demo Mode
+            Enter Demo Mode
           </button>
         ) : null}
       </div>
       <div className="max-w-5xl mx-auto w-full">
-        <header className="mb-10 flex flex-col items-center overflow-visible pt-4 text-center">
+        <header className="app-shell-header mb-10 flex flex-col items-center overflow-visible pt-4 text-center">
           <div className="relative mb-1 inline-block overflow-visible pl-10">
             <EyesLogo className="absolute left-3 top-[-0.9rem] h-5 w-auto" />
             <p className="text-[1.125rem] font-bold tracking-[0.25em] text-sky-400">
