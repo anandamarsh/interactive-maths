@@ -1173,7 +1173,7 @@ export default function App() {
     const shareData: ShareData = {
       title: document.title || "See Maths",
       text: "Check out this maths game on See Maths!",
-      url: SHELL_PUBLIC_URL,
+      url: withDemoParam(SHELL_PUBLIC_URL, demoModeEnabled),
     };
     const looksMobileOrPwa =
       window.matchMedia?.("(display-mode: standalone)").matches ||
@@ -2264,7 +2264,9 @@ export default function App() {
             ✕
           </button>
         </div>
-        <SocialShare />
+        <SocialShare
+          shareUrl={withDemoParam(SHELL_PUBLIC_URL, demoModeEnabled)}
+        />
       </div>
 
       <div
