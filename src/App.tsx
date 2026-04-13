@@ -108,6 +108,11 @@ function EyesLogo({ className = "" }: { className?: string }) {
 }
 
 /** Avoid mixed-content when the shell is HTTPS */
+function isMobileViewport(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(max-width: 900px)").matches;
+}
+
 function iframeSrc(url: string): string {
   if (typeof window === "undefined") return url;
   if (window.location.protocol !== "https:" || !url.startsWith("http://"))
@@ -999,6 +1004,10 @@ export default function App() {
   });
   const activeAnalyticsSessionRef = useRef<AnalyticsSession | null>(null);
   const siteAnalyticsSessionRef = useRef<AnalyticsSession | null>(null);
+  const confirmedMobileGamesRef = useRef<Set<string>>(new Set());
+  const [pendingMobilePlay, setPendingMobilePlay] = useState<
+    { game: Game; url: string } | null
+  >(null);
 
   useEffect(() => {
     const listFile = import.meta.env.DEV ? "/games-local.json" : "/games.json";
@@ -1232,7 +1241,25 @@ export default function App() {
       window.open(targetUrl, "_blank", "noopener,noreferrer");
       return;
     }
+    if (
+      isMobileViewport() &&
+      !confirmedMobileGamesRef.current.has(g.id)
+    ) {
+      setPendingMobilePlay({ game: g, url: targetUrl });
+      return;
+    }
     setActive({ game: g, url: targetUrl });
+  }
+
+  function proceedMobilePlay() {
+    if (!pendingMobilePlay) return;
+    confirmedMobileGamesRef.current.add(pendingMobilePlay.game.id);
+    setActive(pendingMobilePlay);
+    setPendingMobilePlay(null);
+  }
+
+  function cancelMobilePlay() {
+    setPendingMobilePlay(null);
   }
 
   useEffect(() => {
@@ -1384,6 +1411,51 @@ export default function App() {
       }
     };
   }, [active]);
+
+  if (pendingMobilePlay) {
+    return (
+      <div
+        className="fixed inset-0 z-[80] flex items-center justify-center px-6"
+        style={{ backgroundColor: "#020617" }}
+      >
+        <div
+          className="w-full max-w-md rounded-2xl px-6 py-8 text-center"
+          style={{
+            background: "#0f172a",
+            border: "1px solid #334155",
+            boxShadow: "0 20px 60px rgba(2, 6, 23, 0.65)",
+          }}
+        >
+          <div className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">
+            Heads up
+          </div>
+          <h2 className="mt-2 text-lg font-black text-white">
+            {pendingMobilePlay.game.name}
+          </h2>
+          <p className="mt-4 text-sm leading-relaxed text-slate-200">
+            These games work best on a larger screen like a tablet or desktop.
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={proceedMobilePlay}
+              className="whitespace-nowrap rounded-xl px-4 py-3 text-sm font-bold text-slate-950 transition-all"
+              style={{ background: "#facc15" }}
+            >
+              Try mobile version
+            </button>
+            <button
+              type="button"
+              onClick={cancelMobilePlay}
+              className="rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-400 transition-all"
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (active) {
     return (
