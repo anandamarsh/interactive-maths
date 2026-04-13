@@ -1559,10 +1559,7 @@ export default function App() {
             >
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="max-w-sm">
-                  <div className="text-sm font-black uppercase tracking-[0.22em] text-white">
-                    Demo Mode
-                  </div>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-100">
+                  <p className="text-sm leading-relaxed text-slate-100">
                     In Demo mode, you can pass a level with only two questions. Meant for a quick-preview by an Adult.
                   </p>
                 </div>
