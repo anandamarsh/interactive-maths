@@ -1550,7 +1550,7 @@ export default function App() {
           />
           {demoModeEnabled ? (
             <div
-              className="mt-4 w-full max-w-3xl rounded-2xl px-4 py-3 text-left"
+              className="mt-4 w-full max-w-md rounded-2xl px-4 py-3 text-left"
               style={{
                 background: "#09104c",
                 border: "1px solid rgba(96, 165, 250, 0.45)",
