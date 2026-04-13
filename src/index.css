@@ -202,6 +202,52 @@ body {
   align-items: flex-end;
 }
 
+.app-demo-launch {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 40;
+  padding: 0.55rem 1.25rem;
+  border-radius: 9999px;
+  border: 2px solid #fef08a;
+  background: linear-gradient(180deg, #facc15 0%, #f59e0b 100%);
+  color: #0f172a;
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow:
+    0 10px 22px rgba(2, 6, 23, 0.45),
+    0 0 18px rgba(250, 204, 21, 0.55);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    filter 120ms ease;
+}
+
+.app-demo-launch:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow:
+    0 12px 26px rgba(2, 6, 23, 0.5),
+    0 0 26px rgba(250, 204, 21, 0.75);
+}
+
+.app-demo-launch:active {
+  transform: translateY(0);
+  filter: brightness(0.97);
+}
+
+@media (max-width: 640px) {
+  .app-demo-launch {
+    top: 0.75rem;
+    left: 0.75rem;
+    padding: 0.45rem 1rem;
+    font-size: 0.78rem;
+  }
+}
+
 .app-youtube-cta {
   position: relative;
   display: flex;
