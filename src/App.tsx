@@ -38,11 +38,6 @@ const SHELL_YOUTUBE_ICON_URL = "/youtube-circle-logo-svgrepo-com.svg";
 const SHELL_PUBLIC_URL = "https://seemaths.com/";
 const SEE_MATHS_COMMENT_NOTIFICATIONS_KEY = "see-maths:comment-notifications";
 const LEGACY_COMMENT_NOTIFICATIONS_KEY = "interactive-maths:comment-notifications";
-const OVERLAY_EVENT_TYPES = new Set([
-  "see-maths:overlay-active",
-  "interactive-maths:overlay-active",
-]);
-
 function GitHubIcon({ className = "" }: { className?: string }) {
   return (
     <svg
@@ -1031,7 +1026,6 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showShareDrawer, setShowShareDrawer] = useState(false);
   const [showCommentsDrawer, setShowCommentsDrawer] = useState(false);
-  const [embeddedOverlayActive, setEmbeddedOverlayActive] = useState(false);
   const [commentComposeRequest, setCommentComposeRequest] = useState(0);
   const [commentReloadRequest, setCommentReloadRequest] = useState(0);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -1334,7 +1328,6 @@ export default function App() {
 
   function startPlay(g: Game, level?: number) {
     closeSocialDrawers();
-    setEmbeddedOverlayActive(false);
     const levelUrl = level ? withLevelParam(g.url, level) : g.url;
     const targetUrl = withDemoParam(levelUrl, demoModeEnabled);
     if (g.openInNewTab) {
@@ -1361,19 +1354,6 @@ export default function App() {
   function cancelMobilePlay() {
     setPendingMobilePlay(null);
   }
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (!event.data || !OVERLAY_EVENT_TYPES.has(event.data.type)) {
-        return;
-      }
-
-      setEmbeddedOverlayActive(Boolean(event.data.active));
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent<EmbeddedGameAnalyticsMessage>) => {
@@ -1569,17 +1549,16 @@ export default function App() {
           }}
         />
         {active.game.thirdParty && <PartnerIframeChrome url={active.url} />}
-        {!embeddedOverlayActive ? (
-          <button
-            onClick={() => setActive(null)}
-            title="Home"
-            className="arcade-button absolute top-2 left-2 z-[40] w-10 h-10 p-2"
-          >
-            <svg className="w-full h-full" viewBox="0 0 24 24" fill="white">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-            </svg>
-          </button>
-        ) : null}
+        <button
+          onClick={() => setActive(null)}
+          title="Home"
+          aria-label="Return to home"
+          className="arcade-button absolute top-2 left-2 z-[40] h-10 w-10 p-2"
+        >
+          <svg className="h-full w-full" viewBox="0 0 24 24" fill="white">
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+          </svg>
+        </button>
       </div>
     );
   }
