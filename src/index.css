@@ -236,12 +236,6 @@ body {
   }
 }
 
-@media (max-width: 640px) and (orientation: portrait) {
-  .app-shell-header {
-    padding-top: 2rem;
-  }
-}
-
 .app-youtube-cta {
   position: relative;
   display: flex;
