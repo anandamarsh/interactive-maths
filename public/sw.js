@@ -77,9 +77,8 @@ self.addEventListener("fetch", (event) => {
   const isSameOrigin = requestUrl.origin === self.location.origin;
   const wantsHtml = event.request.mode === "navigate";
   const gamesListPath = new URL("./games.json", SCOPE_URL).pathname;
-  const gamesLocalListPath = new URL("./games-local.json", SCOPE_URL).pathname;
 
-  if (isSameOrigin && (requestUrl.pathname === gamesListPath || requestUrl.pathname === gamesLocalListPath)) {
+  if (isSameOrigin && requestUrl.pathname === gamesListPath) {
     event.respondWith(fetch(event.request, { cache: "no-store" }));
     return;
   }

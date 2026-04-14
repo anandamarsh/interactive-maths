@@ -25,10 +25,9 @@ In short: this repo is the platform shell. The actual maths experiences live in 
 
 ## How It Works
 
-At startup, the app chooses which source list to load:
+At startup, the app loads:
 
-- Development uses `public/games-local.json`
-- Production uses `public/games.json`
+- `public/games.json`
 
 Each file contains an array of base URLs for the individual maths apps. For every URL, the shell requests:
 
@@ -54,8 +53,7 @@ This project is intentionally simple. The main parts are:
 
 - `src/App.tsx`: main shell UI, data loading, search, and iframe launcher
 - `src/main.tsx`: React entry point and service worker registration
-- `public/games.json`: production list of hosted maths apps
-- `public/games-local.json`: local development list for testing against localhost apps
+- `public/games.json`: list of hosted maths apps
 - `public/manifest.webmanifest`: PWA metadata for the shell
 - `public/sw.js`: minimal service worker used for installability
 
@@ -89,7 +87,7 @@ The app runs on:
 http://localhost:4000
 ```
 
-By default, development reads from `public/games-local.json`, which is useful when some child apps are running locally on other ports.
+Development reads from `public/games.json`.
 
 ## Building For Production
 
@@ -105,7 +103,7 @@ Preview the production build locally:
 npm run preview
 ```
 
-Production uses `public/games.json`, which should point at deployed child app URLs.
+The build uses `public/games.json`, which should point at the child app URLs you want to publish.
 
 ## Child App Contract
 

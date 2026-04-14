@@ -1,5 +1,5 @@
 /**
- * games.json / games-local.json entries:
+ * games.json entries:
  * - remote: { playUrl, year } for first-party games that expose manifest.json
  * - inline: { playUrl, year, manifest } for third-party or custom-hosted cards
  * - override: { playUrl, year, manifestOverrides } to merge a remote manifest with local overrides
@@ -9,6 +9,7 @@ export interface GameManifest {
   id?: string;
   name?: string;
   icon?: string;
+  ["level-icons"]?: GameLevelIcon[];
   screenshots?: string[];
   videoUrl?: string;
   tags?: string[];
@@ -27,6 +28,13 @@ export interface TeachingLevel {
   syllabusCode?: string;
   syllabusUrl?: string;
   syllabusDescription?: string;
+}
+
+export interface GameLevelIcon {
+  level: number;
+  src: string;
+  sizes?: string;
+  type?: string;
 }
 
 export interface GameListBaseEntry {
@@ -63,6 +71,7 @@ export interface Game {
   githubUrl?: string;
   description: string;
   teachesLevels: TeachingLevel[];
+  levelIcons: GameLevelIcon[];
   /** Card + drawer art (first-party: omit -> favicon.svg on game origin) */
   imageUrl?: string;
   thirdParty: boolean;
@@ -74,8 +83,12 @@ export interface Game {
 export interface GameSlot {
   slotId: string;
   playUrl: string;
+  launchLevel?: number;
+  displayName?: string;
+  imageUrl?: string;
   yearLabel: string;
   yearSortKey: number;
+  teachesLevels: TeachingLevel[];
   thirdParty: boolean;
   openInNewTab: boolean;
   game: Game | null;
@@ -95,13 +108,24 @@ async function fetchJsonNoCache<T>(url: string): Promise<T> {
 
 export const base = (url: string) => url.replace(/\/?$/, "/");
 
-export function hostFromPlayUrl(playUrl: string): string | null {
+function toUrl(url: string): URL | null {
   try {
-    const u = playUrl.startsWith("http") ? playUrl : `https://${playUrl}`;
-    return new URL(u).hostname;
+    return new URL(url.startsWith("http") ? url : `https://${url}`);
   } catch {
     return null;
   }
+}
+
+function manifestBase(url: string): string {
+  const parsed = toUrl(url);
+  if (!parsed) return base(url.split(/[?#]/, 1)[0] ?? url);
+  parsed.search = "";
+  parsed.hash = "";
+  return base(parsed.toString());
+}
+
+export function hostFromPlayUrl(playUrl: string): string | null {
+  return toUrl(playUrl)?.hostname ?? null;
 }
 
 function slugFromUrl(url: string): string {
@@ -164,6 +188,27 @@ function normalizeTeachingLevel(level: unknown): TeachingLevel | null {
   };
 }
 
+function normalizeGameLevelIcon(icon: unknown): GameLevelIcon | null {
+  if (icon === null || typeof icon !== "object") return null;
+  const item = icon as {
+    level?: unknown;
+    src?: unknown;
+    sizes?: unknown;
+    type?: unknown;
+  };
+  const level = typeof item.level === "number" ? item.level : Number(item.level);
+  const src = typeof item.src === "string" ? item.src.trim() : "";
+  if (!Number.isFinite(level) || level <= 0 || !src) return null;
+  const sizes = typeof item.sizes === "string" ? item.sizes.trim() : "";
+  const type = typeof item.type === "string" ? item.type.trim() : "";
+  return {
+    level,
+    src,
+    sizes: sizes || undefined,
+    type: type || undefined,
+  };
+}
+
 export function normalizeGame(
   raw: GameManifest & {
     url: string;
@@ -199,6 +244,12 @@ export function normalizeGame(
       const normalizedLevel = normalizeTeachingLevel(level);
       return normalizedLevel ? [normalizedLevel] : [];
     }) : [],
+    levelIcons: Array.isArray(raw["level-icons"])
+      ? raw["level-icons"].flatMap((icon) => {
+          const normalizedIcon = normalizeGameLevelIcon(icon);
+          return normalizedIcon ? [normalizedIcon] : [];
+        })
+      : [],
     imageUrl: raw.imageUrl,
     thirdParty: Boolean(raw.thirdParty),
     openInNewTab: Boolean(raw.openInNewTab),
@@ -209,13 +260,22 @@ export function normalizeGame(
 
 function resolveAssetUrls(paths: string[] | undefined, gameUrl: string): string[] {
   if (!Array.isArray(paths)) return [];
+  const assetBase = manifestBase(gameUrl);
   return paths
     .map((path) => String(path).trim())
     .filter(Boolean)
     .map((path) => {
       if (/^https?:\/\//.test(path)) return path;
-      return `${base(gameUrl)}${path.replace(/^\//, "")}`;
+      return `${assetBase}${path.replace(/^\//, "")}`;
     });
+}
+
+function resolveAssetUrl(path: string | undefined, gameUrl: string): string | undefined {
+  if (!path) return undefined;
+  const trimmed = path.trim();
+  if (!trimmed) return undefined;
+  if (/^https?:\/\//.test(trimmed)) return trimmed;
+  return `${manifestBase(gameUrl)}${trimmed.replace(/^\//, "")}`;
 }
 
 function getEntryThirdParty(entry: GameListEntry): boolean {
@@ -227,15 +287,26 @@ function getEntryThirdParty(entry: GameListEntry): boolean {
 export function createGameSlot(entry: GameListEntry, index: number): GameSlot {
   const playUrl = entry.playUrl.trim();
   const yearLabel = entry.year.trim();
+  const launchLevelRaw = toUrl(playUrl)?.searchParams.get("level");
+  const launchLevel = launchLevelRaw ? Number(launchLevelRaw) : undefined;
   return {
     slotId: `${index}:${playUrl}`,
     playUrl,
+    launchLevel:
+      launchLevel && Number.isFinite(launchLevel) && launchLevel > 0
+        ? launchLevel
+        : undefined,
     yearLabel,
     yearSortKey: parseYearSortKey(yearLabel),
+    teachesLevels: [],
     thirdParty: getEntryThirdParty(entry),
     openInNewTab: Boolean(entry.openInNewTab),
     game: null,
   };
+}
+
+export function createGameSlots(entry: GameListEntry, index: number): GameSlot[] {
+  return [createGameSlot(entry, index)];
 }
 
 export function compareGameSlots(
@@ -265,7 +336,7 @@ export async function resolveGameEntry(entry: GameListEntry): Promise<Game | nul
 
   if (isRemoteGameOverrideEntry(entry)) {
     try {
-      const m = await fetchJsonNoCache<GameManifest>(base(entry.playUrl) + "manifest.json");
+      const m = await fetchJsonNoCache<GameManifest>(manifestBase(entry.playUrl) + "manifest.json");
       return normalizeGame({
         ...m,
         ...entry.manifestOverrides,
@@ -284,7 +355,7 @@ export async function resolveGameEntry(entry: GameListEntry): Promise<Game | nul
 
   if (isRemoteGameEntry(entry)) {
     try {
-      const m = await fetchJsonNoCache<GameManifest>(base(entry.playUrl) + "manifest.json");
+      const m = await fetchJsonNoCache<GameManifest>(manifestBase(entry.playUrl) + "manifest.json");
       return normalizeGame({
         ...m,
         url: entry.playUrl,
@@ -318,8 +389,14 @@ export async function loadGamesListProgressively(
 /** Ordered fallbacks for <img src> (first-party games only; partners use PartnerGameGlyph) */
 export function getGameIconCandidates(game: Game): string[] {
   const list: string[] = [];
+  const assetBase = manifestBase(game.url);
   if (game.imageUrl) list.push(game.imageUrl);
-  list.push(`${base(game.url)}favicon.svg`);
-  list.push(`${base(game.url)}favicon.ico`);
+  list.push(`${assetBase}favicon.svg`);
+  list.push(`${assetBase}favicon.ico`);
   return [...new Set(list.filter(Boolean))];
+}
+
+export function getGameLevelIconUrl(game: Game, level: number): string | undefined {
+  const match = game.levelIcons.find((icon) => icon.level === level);
+  return resolveAssetUrl(match?.src, game.url);
 }

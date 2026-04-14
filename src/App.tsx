@@ -4,8 +4,10 @@ import { GameIcon } from "./components/GameIcon";
 import type { Game, GameListEntry, GameSlot, TeachingLevel } from "./games";
 import {
   compareGameSlots,
-  createGameSlot,
+  createGameSlots,
+  getGameLevelIconUrl,
   loadGamesListProgressively,
+  parseYearSortKey,
 } from "./games";
 import {
   disablePushSubscription,
@@ -135,6 +137,11 @@ function hostName(url: string): string | null {
 }
 
 function getLaunchLevels(game: Game): number[] {
+  if (game.levelIcons.length > 0) {
+    return [...new Set(game.levelIcons.map((icon) => icon.level))]
+      .filter((level) => level > 0)
+      .sort((a, b) => a - b);
+  }
   const host = hostName(game.url) ?? "";
   if (host.includes("maths-angle-explorer")) return [1, 2, 3];
   if (host.includes("maths-distance-calculator")) return [1, 2, 3];
@@ -629,6 +636,20 @@ const starterTagStyle: CSSProperties = {
   fontWeight: 800,
 };
 
+const YEAR_STRIP_COLORS: Record<string, string> = {
+  preschool: "#ec4899",
+  "1": "#0ea5e9",
+  "2": "#f97316",
+  "3": "#2563eb",
+  "4": "#e11d48",
+  "5": "#059669",
+  "6": "#7c3aed",
+  "7": "#ca8a04",
+  "8": "#0891b2",
+  "9": "#dc2626",
+  "10": "#4f46e5",
+};
+
 /** Merge all active teachesLevels into a single year label, e.g. [Stage 2 Yr 3-4, Stage 3 Yr 5-6] → "Yr 3-6" */
 function formatYearStripLabel(label: string): string {
   const trimmed = label.trim();
@@ -667,51 +688,75 @@ function getYearStripLabel(levels: TeachingLevel[], fallback = ""): string {
   return formatYearStripLabel(fallback || deriveYearStripLabel(levels));
 }
 
-/** Colour from the lowest NSW stage across all teachesLevels */
-function getStageColor(levels: TeachingLevel[]): string {
-  const stageNum = (sl: string) => {
-    if (/kindergarten/i.test(sl)) return 0;
-    const m = sl.match(/Stage\s+(\d+)/i);
-    return m ? parseInt(m[1]) : 99;
-  };
-  const sorted = [...levels].sort(
-    (a, b) => stageNum(a.stageLabel ?? "") - stageNum(b.stageLabel ?? ""),
-  );
-  const sl = sorted[0]?.stageLabel ?? "";
-  if (/kindergarten/i.test(sl)) return "#7c3aed";
-  const m = sl.match(/Stage\s+(\d+)/i);
-  if (!m) return "#475569";
-  switch (m[1]) {
-    case "1":
-      return "#0891b2";
-    case "2":
-      return "#2563eb";
-    case "3":
-      return "#059669";
-    case "4":
-      return "#d97706";
-    case "5":
-      return "#dc2626";
-    default:
-      return "#475569";
-  }
-}
-
 function getYearColor(yearLabel: string): string {
-  if (/preschool|kindergarten/i.test(yearLabel)) return "#7c3aed";
+  if (/preschool|kindergarten/i.test(yearLabel)) {
+    return YEAR_STRIP_COLORS.preschool;
+  }
   const rangeMatch = yearLabel.match(/(\d+)\s*-\s*(\d+)/);
   const singleMatch = yearLabel.match(/(\d+)/);
-  const minYear = rangeMatch
+  const anchorYear = rangeMatch
     ? parseInt(rangeMatch[1], 10)
     : singleMatch
       ? parseInt(singleMatch[1], 10)
       : 99;
-  if (minYear <= 2) return "#0891b2";
-  if (minYear <= 4) return "#2563eb";
-  if (minYear <= 6) return "#059669";
-  if (minYear <= 8) return "#d97706";
-  if (minYear <= 10) return "#dc2626";
-  return "#475569";
+  return YEAR_STRIP_COLORS[String(anchorYear)] ?? "#475569";
+}
+
+function getDisplayTeachingLevels(game: Game, launchLevel?: number): TeachingLevel[] {
+  if (!launchLevel) return game.teachesLevels;
+  const matchedLevel = game.teachesLevels[launchLevel - 1];
+  return matchedLevel ? [matchedLevel] : game.teachesLevels;
+}
+
+function getDisplayName(game: Game, launchLevel?: number): string {
+  return launchLevel ? `${game.name} ${launchLevel}` : game.name;
+}
+
+function getCardDisplayName(
+  game: Game,
+  launchLevel: number | undefined,
+  demoModeEnabled: boolean,
+): string {
+  if (demoModeEnabled && launchLevel) return game.name;
+  return getDisplayName(game, launchLevel);
+}
+
+function getDisplayImageUrl(game: Game, launchLevel?: number): string | undefined {
+  if (!launchLevel) return game.imageUrl;
+  return getGameLevelIconUrl(game, launchLevel) ?? game.imageUrl;
+}
+
+function getDisplayYearLabel(game: Game, launchLevel?: number): string {
+  return getYearStripLabel(
+    getDisplayTeachingLevels(game, launchLevel),
+    game.yearLabel,
+  );
+}
+
+function getSlotDisplayGame(slot: GameSlot): Game | null {
+  if (!slot.game) return null;
+  return {
+    ...slot.game,
+    name: slot.displayName ?? getDisplayName(slot.game, slot.launchLevel),
+    imageUrl: slot.imageUrl ?? getDisplayImageUrl(slot.game, slot.launchLevel),
+    teachesLevels:
+      slot.teachesLevels.length > 0
+        ? slot.teachesLevels
+        : getDisplayTeachingLevels(slot.game, slot.launchLevel),
+    yearLabel: slot.yearLabel || getDisplayYearLabel(slot.game, slot.launchLevel),
+  };
+}
+
+function getSlotDisplayGameForMode(
+  slot: GameSlot,
+  demoModeEnabled: boolean,
+): Game | null {
+  const displayGame = getSlotDisplayGame(slot);
+  if (!displayGame || !slot.game) return displayGame;
+  return {
+    ...displayGame,
+    name: getCardDisplayName(slot.game, slot.launchLevel, demoModeEnabled),
+  };
 }
 
 /** Top-right overlay when a partner game is embedded */
@@ -740,37 +785,53 @@ function PartnerIframeChrome({ url }: { url: string }) {
 
 function LevelLaunchButtons({
   levels,
+  enabledLevels,
   onSelect,
 }: {
   levels: number[];
+  enabledLevels?: number[];
   onSelect: (level: number) => void;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {levels.map((level) => (
-        <button
-          key={level}
-          type="button"
-          onClick={() => onSelect(level)}
-          className="inline-flex items-center gap-3 rounded-xl px-5 py-2 text-sm font-bold text-black cursor-pointer transition-all"
-          style={{ background: "linear-gradient(135deg, #4ade80, #16a34a)" }}
-          title={`Play level ${level}`}
-          aria-label={`Play level ${level}`}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background =
-              "linear-gradient(135deg, #86efac, #22c55e)";
-            (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background =
-              "linear-gradient(135deg, #4ade80, #16a34a)";
-            (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-          }}
-        >
-          <span aria-hidden="true">▶</span>
-          <span>{`Level ${level}`}</span>
-        </button>
-      ))}
+      {levels.map((level) => {
+        const enabled = !enabledLevels || enabledLevels.includes(level);
+        return (
+          <button
+            key={level}
+            type="button"
+            onClick={() => {
+              if (enabled) onSelect(level);
+            }}
+            disabled={!enabled}
+            className="inline-flex items-center gap-3 rounded-xl px-5 py-2 text-sm font-bold text-black transition-all"
+            style={{
+              background: enabled
+                ? "linear-gradient(135deg, #4ade80, #16a34a)"
+                : "linear-gradient(135deg, #475569, #334155)",
+              cursor: enabled ? "pointer" : "not-allowed",
+              opacity: enabled ? 1 : 0.5,
+            }}
+            title={enabled ? `Play level ${level}` : `Level ${level} unavailable from this card`}
+            aria-label={enabled ? `Play level ${level}` : `Level ${level} unavailable`}
+            onMouseEnter={(e) => {
+              if (!enabled) return;
+              (e.currentTarget as HTMLElement).style.background =
+                "linear-gradient(135deg, #86efac, #22c55e)";
+              (e.currentTarget as HTMLElement).style.transform = "scale(1.03)";
+            }}
+            onMouseLeave={(e) => {
+              if (!enabled) return;
+              (e.currentTarget as HTMLElement).style.background =
+                "linear-gradient(135deg, #4ade80, #16a34a)";
+              (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+            }}
+          >
+            <span aria-hidden="true">{enabled ? "▶" : "•"}</span>
+            <span>{`Level ${level}`}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -967,7 +1028,7 @@ export default function App() {
   const [active, setActive] = useState<{ game: Game; url: string } | null>(
     null,
   );
-  const [drawer, setDrawer] = useState<Game | null>(null);
+  const [drawer, setDrawer] = useState<{ game: Game; launchLevel?: number } | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showShareDrawer, setShowShareDrawer] = useState(false);
   const [showCommentsDrawer, setShowCommentsDrawer] = useState(false);
@@ -1010,7 +1071,7 @@ export default function App() {
   >(null);
 
   useEffect(() => {
-    const listFile = import.meta.env.DEV ? "/games-local.json" : "/games.json";
+    const listFile = "/games.json";
     const controller = new AbortController();
     let cancelled = false;
 
@@ -1029,7 +1090,7 @@ export default function App() {
       })
       .then(async (entries) => {
         const initialSlots = entries
-          .map((entry, index) => createGameSlot(entry, index))
+          .flatMap((entry, index) => createGameSlots(entry, index))
           .sort(compareGameSlots);
 
         if (!cancelled) {
@@ -1038,11 +1099,24 @@ export default function App() {
 
         await loadGamesListProgressively(entries, (game, index) => {
           if (cancelled) return;
-          const slotId = `${index}:${entries[index].playUrl.trim()}`;
+          const baseSlotId = `${index}:${entries[index].playUrl.trim()}`;
           setSlots((current) =>
             current
               .map((slot) =>
-                slot.slotId === slotId ? { ...slot, game } : slot,
+                slot.slotId === baseSlotId ||
+                slot.slotId.startsWith(`${baseSlotId}:level-`)
+                  ? {
+                      ...slot,
+                      game,
+                      displayName: getDisplayName(game, slot.launchLevel),
+                      imageUrl: getDisplayImageUrl(game, slot.launchLevel),
+                      teachesLevels: getDisplayTeachingLevels(game, slot.launchLevel),
+                      yearLabel: getDisplayYearLabel(game, slot.launchLevel),
+                      yearSortKey: parseYearSortKey(
+                        getDisplayYearLabel(game, slot.launchLevel),
+                      ),
+                    }
+                  : slot,
               )
               .sort(compareGameSlots),
           );
@@ -1145,9 +1219,9 @@ export default function App() {
     }
   }
 
-  const openDrawer = (g: Game) => {
+  const openDrawer = (g: Game, launchLevel?: number) => {
     closeSocialDrawers();
-    setDrawer(g);
+    setDrawer({ game: g, launchLevel });
     setTimeout(() => setDrawerOpen(true), 10);
   };
 
@@ -1217,11 +1291,18 @@ export default function App() {
       if (isRipple || slot.game.thirdParty) {
         return false;
       }
+      if (slot.launchLevel) {
+        const launchLevels = getLaunchLevels(slot.game);
+        const lowestLevel = launchLevels.length > 0 ? launchLevels[0] : slot.launchLevel;
+        if (slot.launchLevel !== lowestLevel) {
+          return false;
+        }
+      }
     }
     const q = query.toLowerCase();
     if (!q) return true;
     if (!slot.game) return false;
-    const g = slot.game;
+    const g = getSlotDisplayGameForMode(slot, demoModeEnabled) ?? slot.game;
     return (
       !q ||
       g.name.toLowerCase().includes(q) ||
@@ -1231,6 +1312,9 @@ export default function App() {
     );
   });
   const commentPageUrl = active ? active.game.url : SHELL_PUBLIC_URL;
+  const drawerGame = drawer?.game ?? null;
+  const drawerEnabledLevels =
+    demoModeEnabled || !drawer?.launchLevel ? undefined : [drawer.launchLevel];
 
   function startPlay(g: Game, level?: number) {
     closeSocialDrawers();
@@ -1657,95 +1741,96 @@ export default function App() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {filteredSlots.map((slot) =>
               slot.game ? (
-                <button
-                  key={slot.slotId}
-                  onClick={() => openDrawer(slot.game!)}
-                  className="relative flex w-full max-w-[206px] justify-self-center flex-col items-center gap-3 overflow-hidden rounded-2xl p-2 pt-3 text-center transition-all cursor-pointer"
-                  style={{ background: "#0f172a", border: "1px solid #1e293b" }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.boxShadow =
-                      "0 0 25px rgba(74,222,128,0.8), 0 0 60px rgba(74,222,128,0.35)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.boxShadow = "none";
-                  }}
-                >
-                  {/* Corner badge (top-left): Partner or Starter */}
-                  {slot.game.thirdParty ? (
-                    <span
-                      className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
-                      style={partnerTagGoldStyle}
+                (() => {
+                  const cardGame = getSlotDisplayGameForMode(
+                    slot,
+                    demoModeEnabled,
+                  );
+                  if (!cardGame) return null;
+                  const label = getYearStripLabel(
+                    cardGame.teachesLevels,
+                    cardGame.yearLabel,
+                  );
+                  return (
+                    <button
+                      key={slot.slotId}
+                      onClick={() => openDrawer(slot.game!, slot.launchLevel)}
+                      className="relative flex w-full max-w-[206px] justify-self-center flex-col items-center gap-3 overflow-hidden rounded-2xl p-2 pt-3 text-center transition-all cursor-pointer"
+                      style={{ background: "#0f172a", border: "1px solid #1e293b" }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.boxShadow =
+                          "0 0 25px rgba(74,222,128,0.8), 0 0 60px rgba(74,222,128,0.35)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                      }}
                     >
-                      Partner
-                    </span>
-                  ) : slot.game.tags.includes("starter") ? (
-                    <span
-                      className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
-                      style={starterTagStyle}
-                    >
-                      Starter
-                    </span>
-                  ) : null}
+                      {cardGame.thirdParty ? (
+                        <span
+                          className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
+                          style={partnerTagGoldStyle}
+                        >
+                          Partner
+                        </span>
+                      ) : cardGame.tags.includes("starter") ? (
+                        <span
+                          className="pointer-events-none absolute top-0 left-0 z-20 rounded-br-lg rounded-tl-2xl px-2.5 py-1.5 text-[10px] uppercase tracking-wide"
+                          style={starterTagStyle}
+                        >
+                          Starter
+                        </span>
+                      ) : null}
 
-                  {/* Diagonal year strip — top-right corner, colour-coded by stage */}
-                  {(() => {
-                    const label = getYearStripLabel(
-                      slot.game.teachesLevels,
-                      slot.game.yearLabel,
-                    );
-                    if (!label) return null;
-                    return (
-                      <div
-                        className="pointer-events-none absolute z-[15]"
-                        style={{
-                          top: "18px",
-                          right: "-28px",
-                          width: "108px",
-                          transform: "rotate(45deg)",
-                          background:
-                            slot.game.teachesLevels.length > 0
-                              ? getStageColor(slot.game.teachesLevels)
-                              : getYearColor(label),
-                          color: "white",
-                          fontSize: "9px",
-                          fontWeight: 800,
-                          textAlign: "center",
-                          padding: "4px 0",
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {label}
+                      {label ? (
+                        <div
+                          className="pointer-events-none absolute z-[15]"
+                          style={{
+                            top: "18px",
+                            right: "-28px",
+                            width: "108px",
+                            transform: "rotate(45deg)",
+                            background: getYearColor(label),
+                            color: "white",
+                            fontSize: "9px",
+                            fontWeight: 800,
+                            textAlign: "center",
+                            padding: "4px 0",
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {label}
+                        </div>
+                      ) : null}
+
+                      <GameIcon
+                        game={cardGame}
+                        className="w-32 h-32 object-contain"
+                      />
+                      <div className="px-1">
+                        <div className="text-white font-bold text-sm leading-tight">
+                          {cardGame.name}
+                        </div>
                       </div>
-                    );
-                  })()}
-
-                  <GameIcon
-                    game={slot.game}
-                    className="w-32 h-32 object-contain"
-                  />
-                  <div className="px-1">
-                    <div className="text-white font-bold text-sm leading-tight">
-                      {slot.game.name}
-                    </div>
-                  </div>
-                  <div className="flex w-full flex-wrap justify-start gap-1 pl-2 pr-12">
-                    {slot.game.tags.slice(0, 2).map((t, i) => (
-                      <span
-                        key={t}
-                        className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                        style={{
-                          background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
-                          color: SKILL_COLORS[i % SKILL_COLORS.length].color,
-                          border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
-                        }}
-                      >
-                        {formatTag(t)}
-                      </span>
-                    ))}
-                  </div>
-                  <GameAuthorBadge githubUrl={slot.game.githubUrl} />
-                </button>
+                      <div className="flex w-full flex-wrap justify-start gap-1 pl-2 pr-12">
+                        {cardGame.tags.slice(0, 2).map((t, i) => (
+                          <span
+                            key={t}
+                            className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                            style={{
+                              background: SKILL_COLORS[i % SKILL_COLORS.length].bg,
+                              color: SKILL_COLORS[i % SKILL_COLORS.length].color,
+                              border: `1px solid ${SKILL_COLORS[i % SKILL_COLORS.length].color}`,
+                            }}
+                          >
+                            {formatTag(t)}
+                          </span>
+                        ))}
+                      </div>
+                      <GameAuthorBadge githubUrl={cardGame.githubUrl} />
+                    </button>
+                  );
+                })()
               ) : (
                 <LoadingCard key={slot.slotId} slot={slot} />
               ),
@@ -1786,9 +1871,9 @@ export default function App() {
               </svg>
             </button>
 
-            {drawer.githubUrl ? (
+            {drawerGame?.githubUrl ? (
               <a
-                href={drawer.githubUrl}
+                href={drawerGame.githubUrl}
                 target="_blank"
                 rel="noreferrer"
                 title="Open app GitHub"
@@ -1800,7 +1885,7 @@ export default function App() {
 
             {isMobilePortrait ? (
               <AuthorAvatarButton
-                githubUrl={drawer.githubUrl}
+                githubUrl={drawerGame?.githubUrl}
                 className="relative z-[60]"
               />
             ) : null}
@@ -1855,19 +1940,19 @@ export default function App() {
               >
                 <div className="flex items-center gap-4">
                   <GameIcon
-                    game={drawer}
+                    game={drawerGame!}
                     className="w-32 h-32 object-contain shrink-0"
                     alt=""
                   />
                   <div className="flex min-w-0 flex-1 flex-col gap-2 justify-center">
-                    {drawer.thirdParty ? (
+                    {drawerGame?.thirdParty ? (
                       <span
                         className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
                         style={partnerTagGoldStyle}
                       >
                         Partner site
                       </span>
-                    ) : drawer.tags.includes("starter") ? (
+                    ) : drawerGame?.tags.includes("starter") ? (
                       <span
                         className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
                         style={starterTagStyle}
@@ -1878,30 +1963,32 @@ export default function App() {
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
                         <h2 className="text-2xl font-black text-white leading-tight">
-                          {drawer.name}
+                          {drawerGame?.name}
                         </h2>
                       </div>
-                      {drawer.buildStamp && !drawer.thirdParty && (
+                      {drawerGame?.buildStamp && !drawerGame.thirdParty && (
                         <p className="text-[10px] leading-none text-sky-300/10 transition-colors hover:text-sky-300/80">
-                          Build {drawer.buildStamp}
+                          Build {drawerGame.buildStamp}
                         </p>
                       )}
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      {getLaunchLevels(drawer).length > 0 ? (
+                      {drawerGame && getLaunchLevels(drawerGame).length > 0 ? (
                         <LevelLaunchButtons
-                          levels={getLaunchLevels(drawer)}
+                          levels={getLaunchLevels(drawerGame)}
+                          enabledLevels={drawerEnabledLevels}
                           onSelect={(level) => {
-                            startPlay(drawer, level);
-                            if (!drawer.openInNewTab) closeDrawer();
+                            startPlay(drawerGame, level);
+                            if (!drawerGame.openInNewTab) closeDrawer();
                           }}
                         />
                       ) : (
                         <button
                           type="button"
                           onClick={() => {
-                            startPlay(drawer);
-                            if (!drawer.openInNewTab) closeDrawer();
+                            if (!drawerGame) return;
+                            startPlay(drawerGame);
+                            if (!drawerGame.openInNewTab) closeDrawer();
                           }}
                           className="self-start rounded-xl px-6 py-2 text-sm font-bold text-black cursor-pointer transition-all"
                           style={{
@@ -1921,16 +2008,16 @@ export default function App() {
                               "scale(1)";
                           }}
                         >
-                          {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
+                          {drawerGame?.openInNewTab ? "▶ Open game" : "▶ Play"}
                         </button>
                       )}
                     </div>
-                    {drawer.thirdParty && !drawer.openInNewTab && (
+                    {drawerGame?.thirdParty && !drawerGame.openInNewTab && (
                       <button
                         type="button"
                         onClick={() => {
                           window.open(
-                            withDemoParam(drawer.url, demoModeEnabled),
+                            withDemoParam(drawerGame.url, demoModeEnabled),
                             "_blank",
                             "noopener,noreferrer",
                           );
@@ -1961,7 +2048,7 @@ export default function App() {
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-1">
-                  {drawer.skills.slice(0, 4).map((s, i) => (
+                  {drawerGame?.skills.slice(0, 4).map((s, i) => (
                     <span
                       key={s}
                       className="text-[10px] px-2 py-0.5 rounded-full font-medium"
@@ -1975,13 +2062,13 @@ export default function App() {
                     </span>
                   ))}
                 </div>
-                {drawer.thirdParty && (
+                {drawerGame?.thirdParty && (
                   <p
                     className="mt-3 max-w-full text-[10px] leading-snug"
                     style={{ color: "#64748b", wordBreak: "break-all" }}
-                    title={drawer.url}
+                    title={drawerGame.url}
                   >
-                    {drawer.url}
+                    {drawerGame.url}
                   </p>
                 )}
               </div>
@@ -1991,19 +2078,19 @@ export default function App() {
                 style={{ borderBottom: "1px solid #1e293b" }}
               >
                 <GameIcon
-                  game={drawer}
+                  game={drawerGame!}
                   className="w-40 h-40 object-contain shrink-0"
                   alt=""
                 />
                 <div className="flex flex-col gap-4 justify-center min-w-0">
-                  {drawer.thirdParty ? (
+                  {drawerGame?.thirdParty ? (
                     <span
                       className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
                       style={partnerTagGoldStyle}
-                    >
-                      Partner site
-                    </span>
-                  ) : drawer.tags.includes("starter") ? (
+                      >
+                        Partner site
+                      </span>
+                  ) : drawerGame?.tags.includes("starter") ? (
                     <span
                       className="self-start rounded-lg px-3 py-1.5 text-[10px] uppercase tracking-wider"
                       style={starterTagStyle}
@@ -2012,7 +2099,7 @@ export default function App() {
                     </span>
                   ) : null}
                   <div className="flex flex-wrap gap-1">
-                    {drawer.skills.slice(0, 4).map((s, i) => (
+                    {drawerGame?.skills.slice(0, 4).map((s, i) => (
                       <span
                         key={s}
                         className="text-[10px] px-2 py-0.5 rounded-full font-medium"
@@ -2029,34 +2116,36 @@ export default function App() {
                   <div className="flex flex-col gap-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-2xl font-black text-white leading-tight">
-                        {drawer.name}
+                        {drawerGame?.name}
                       </h2>
                       <AuthorAvatarButton
-                        githubUrl={drawer.githubUrl}
+                        githubUrl={drawerGame?.githubUrl}
                         className="relative shrink-0"
                       />
                     </div>
-                    {drawer.buildStamp && !drawer.thirdParty && (
+                    {drawerGame?.buildStamp && !drawerGame.thirdParty && (
                       <p className="pb-0.5 text-[10px] leading-none text-sky-300/10 transition-colors hover:text-sky-300/80">
-                        Build {drawer.buildStamp}
+                        Build {drawerGame.buildStamp}
                       </p>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {getLaunchLevels(drawer).length > 0 ? (
+                    {drawerGame && getLaunchLevels(drawerGame).length > 0 ? (
                       <LevelLaunchButtons
-                        levels={getLaunchLevels(drawer)}
+                        levels={getLaunchLevels(drawerGame)}
+                        enabledLevels={drawerEnabledLevels}
                         onSelect={(level) => {
-                          startPlay(drawer, level);
-                          if (!drawer.openInNewTab) closeDrawer();
+                          startPlay(drawerGame, level);
+                          if (!drawerGame.openInNewTab) closeDrawer();
                         }}
                       />
                     ) : (
                       <button
                         type="button"
                         onClick={() => {
-                          startPlay(drawer);
-                          if (!drawer.openInNewTab) closeDrawer();
+                          if (!drawerGame) return;
+                          startPlay(drawerGame);
+                          if (!drawerGame.openInNewTab) closeDrawer();
                         }}
                         className="px-6 py-2 rounded-xl font-bold text-sm text-black cursor-pointer transition-all"
                         style={{
@@ -2076,15 +2165,15 @@ export default function App() {
                             "scale(1)";
                         }}
                       >
-                        {drawer.openInNewTab ? "▶ Open game" : "▶ Play"}
+                        {drawerGame?.openInNewTab ? "▶ Open game" : "▶ Play"}
                       </button>
                     )}
-                    {drawer.thirdParty && !drawer.openInNewTab && (
+                    {drawerGame?.thirdParty && !drawerGame.openInNewTab && (
                       <button
                         type="button"
                         onClick={() => {
                           window.open(
-                            withDemoParam(drawer.url, demoModeEnabled),
+                            withDemoParam(drawerGame.url, demoModeEnabled),
                             "_blank",
                             "noopener,noreferrer",
                           );
@@ -2113,13 +2202,13 @@ export default function App() {
                       </button>
                     )}
                   </div>
-                  {drawer.thirdParty && (
+                  {drawerGame?.thirdParty && (
                     <p
                       className="mt-2 max-w-full text-[10px] leading-snug"
                       style={{ color: "#64748b", wordBreak: "break-all" }}
-                      title={drawer.url}
+                      title={drawerGame.url}
                     >
-                      {drawer.url}
+                      {drawerGame.url}
                     </p>
                   )}
                 </div>
@@ -2127,17 +2216,19 @@ export default function App() {
             )}
 
             <div className="lg:flex-1 lg:overflow-y-auto">
-              {(drawer.videoUrl || drawer.screenshots.length > 0) && (
+              {(drawerGame?.videoUrl || (drawerGame?.screenshots.length ?? 0) > 0) && (
                 <ScreenshotCarousel
-                  screenshots={drawer.screenshots}
-                  videoUrl={drawer.videoUrl}
-                  name={drawer.name}
+                  screenshots={drawerGame?.screenshots ?? []}
+                  videoUrl={drawerGame?.videoUrl}
+                  name={drawerGame?.name ?? ""}
                 />
               )}
 
               {/* Row 2: description */}
               <div className="shrink-0 p-6">
-                {renderDescription(drawer.description, drawer.teachesLevels)}
+                {drawerGame
+                  ? renderDescription(drawerGame.description, drawerGame.teachesLevels)
+                  : null}
               </div>
             </div>
           </div>

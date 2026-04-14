@@ -4,11 +4,27 @@
     "year": "Preschool"
   },
   {
-    "playUrl": "https://maths-distance-calculator.vercel.app/",
-    "year": "5-6"
+    "playUrl": "https://maths-distance-calculator.vercel.app/?level=1",
+    "year": "Year 4"
   },
   {
-    "playUrl": "https://maths-angle-explorer.vercel.app/",
-    "year": "Year 3-7"
+    "playUrl": "https://maths-distance-calculator.vercel.app/?level=2",
+    "year": "Year 5"
+  },
+  {
+    "playUrl": "https://maths-distance-calculator.vercel.app/?level=3",
+    "year": "Year 7"
+  },
+  {
+    "playUrl": "https://maths-angle-explorer.vercel.app/?level=1",
+    "year": "Year 5"
+  },
+  {
+    "playUrl": "https://maths-angle-explorer.vercel.app/?level=2",
+    "year": "Year 6"
+  },
+  {
+    "playUrl": "https://maths-angle-explorer.vercel.app/?level=3",
+    "year": "Year 7"
   }
 ]
