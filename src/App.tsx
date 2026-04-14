@@ -1313,6 +1313,23 @@ export default function App() {
   });
   const commentPageUrl = active ? active.game.url : SHELL_PUBLIC_URL;
   const drawerGame = drawer?.game ?? null;
+  const drawerDisplayGame =
+    drawerGame && drawer
+      ? {
+          ...drawerGame,
+          name: getCardDisplayName(
+            drawerGame,
+            drawer.launchLevel,
+            demoModeEnabled,
+          ),
+          imageUrl: getDisplayImageUrl(drawerGame, drawer.launchLevel),
+          teachesLevels: getDisplayTeachingLevels(
+            drawerGame,
+            drawer.launchLevel,
+          ),
+          yearLabel: getDisplayYearLabel(drawerGame, drawer.launchLevel),
+        }
+      : null;
   const drawerEnabledLevels =
     demoModeEnabled || !drawer?.launchLevel ? undefined : [drawer.launchLevel];
 
@@ -1961,8 +1978,8 @@ export default function App() {
               >
                 <div className="flex items-center gap-4">
                   <GameIcon
-                    game={drawerGame!}
-                    className="w-32 h-32 object-contain shrink-0"
+                    game={drawerDisplayGame!}
+                    className="w-32 h-32 rounded-[1.75rem] object-contain shrink-0"
                     alt=""
                   />
                   <div className="flex min-w-0 flex-1 flex-col gap-2 justify-center">
@@ -2099,8 +2116,8 @@ export default function App() {
                 style={{ borderBottom: "1px solid #1e293b" }}
               >
                 <GameIcon
-                  game={drawerGame!}
-                  className="w-40 h-40 object-contain shrink-0"
+                  game={drawerDisplayGame!}
+                  className="w-40 h-40 rounded-[1.75rem] object-contain shrink-0"
                   alt=""
                 />
                 <div className="flex flex-col gap-4 justify-center min-w-0">
