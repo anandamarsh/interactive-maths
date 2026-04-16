@@ -1048,6 +1048,7 @@ export default function App() {
   const [youtubeBubbleDismissed, setYoutubeBubbleDismissed] = useState(
     readYouTubeBubbleDismissed,
   );
+  const [youtubeBubbleFading, setYoutubeBubbleFading] = useState(false);
   const [isMobileLandscape, setIsMobileLandscape] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 1024 && window.innerWidth > window.innerHeight;
@@ -1150,6 +1151,13 @@ export default function App() {
       youtubeBubbleDismissedKey,
       youtubeBubbleDismissed ? "true" : "false",
     );
+  }, [youtubeBubbleDismissed]);
+
+  // Auto-fade the YouTube bubble after 3 minutes
+  useEffect(() => {
+    if (youtubeBubbleDismissed) return;
+    const timer = setTimeout(() => setYoutubeBubbleFading(true), 3 * 60 * 1000);
+    return () => clearTimeout(timer);
   }, [youtubeBubbleDismissed]);
 
   useEffect(() => {
@@ -1579,9 +1587,12 @@ export default function App() {
         <div className="app-youtube-cta">
           {!youtubeBubbleDismissed ? (
             <div
-              className="app-youtube-bubble"
+              className={`app-youtube-bubble${youtubeBubbleFading ? " app-youtube-bubble-fading" : ""}`}
               role="complementary"
               aria-label="YouTube channel prompt"
+              onTransitionEnd={() => {
+                if (youtubeBubbleFading) setYoutubeBubbleDismissed(true);
+              }}
             >
               <a
                 href={SHELL_YOUTUBE_URL}
