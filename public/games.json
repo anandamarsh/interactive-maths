@@ -26,5 +26,9 @@
   {
     "playUrl": "https://maths-angle-explorer.vercel.app/?level=3",
     "year": "Year 7"
+  },
+  {
+    "playUrl": "https://maths-pack-it.vercel.app/?level=1",
+    "year": "Year 7"
   }
 ]
